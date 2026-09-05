@@ -23,4 +23,6 @@ data/*.db-shm
 # Vercel biên dịch từng file .ts riêng lẻ chứ không bundle, nên nó để nguyên
 # chuỗi import './_auth.ts' rồi không resolve được lúc chạy. Tự bundle là cách
 # giữ được quy ước .ts của repo mà vẫn ra thứ Vercel chạy được.
-api/
+# Neo vào thư mục gốc: pattern trần `api/` khớp ở mọi cấp và sẽ nuốt luôn
+# src/api/, nơi chứa mã nguồn.
+/api/

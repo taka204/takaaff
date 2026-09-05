@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util'
 import { config, hasShopeeCredentials } from './config.ts'
-import { db } from './db/index.ts'
+import { migrateSchema } from './db/index.ts'
 import {
   countUndatedConversions,
   findLinkById,
@@ -52,10 +52,19 @@ function boolFlag(name: string): boolean {
 }
 
 async function main(): Promise<void> {
+  if (command !== 'help') {
+    // Schema được nâng ở đây và chỉ ở đây. Serverless không migrate — xem chú
+    // thích trong src/db/index.ts.
+    await migrateSchema()
+  }
+
   switch (command) {
     case 'db:init': {
-      db()
-      console.log(`DB sẵn sàng tại ${config.dbPath}`)
+      console.log(
+        config.databaseUrl === ''
+          ? `DB sẵn sàng tại ${config.dbPath}`
+          : 'DB sẵn sàng trên Postgres (DATABASE_URL)',
+      )
       break
     }
 
@@ -80,7 +89,7 @@ async function main(): Promise<void> {
 
     case 'rank': {
       const limit = intFlag('limit', 20)
-      const { computedAt, scored, rows } = rank(limit)
+      const { computedAt, scored, rows } = await rank(limit)
 
       if (boolFlag('json')) {
         console.log(JSON.stringify(rows, null, 2))
@@ -96,10 +105,10 @@ async function main(): Promise<void> {
     case 'link': {
       const itemId = flag('item')
       if (itemId === '') throw new Error('Cần --item=<item_id>')
-      const run = latestScoreRun()
+      const run = await latestScoreRun()
       if (run === null) throw new Error('Chưa có lượt chấm điểm nào. Chạy `npm run rank` trước.')
 
-      const row = topScores(10_000, run).find((r) => r.itemId === itemId)
+      const row = (await topScores(10_000, run)).find((r) => r.itemId === itemId)
       if (!row) throw new Error(`Không tìm thấy ${itemId} trong lượt chấm điểm gần nhất`)
 
       const composed = compose(row, {
@@ -115,7 +124,12 @@ async function main(): Promise<void> {
 
       // Lưu lại link ngay cả khi đăng tay: không có dòng trong bảng `link` thì
       // sau này không có chỗ nào để gắn số click vào, và EPC mất luôn bài đó.
-      const linkId = upsertLink(row.itemId, composed.url, composed.subIds, new Date().toISOString())
+      const linkId = await upsertLink(
+        row.itemId,
+        composed.url,
+        composed.subIds,
+        new Date().toISOString(),
+      )
 
       console.log(composed.url)
       console.log(`subId: ${Object.values(composed.subIds).join(' | ')}`)
@@ -129,9 +143,9 @@ async function main(): Promise<void> {
       if (linkId <= 0) throw new Error('Cần --link=<id>. Xem danh sách: npm run clicks:pending')
       if (clicks < 0) throw new Error('Cần --clicks=<số>')
 
-      if (!setLinkClicks(linkId, clicks)) throw new Error(`Không có link id ${linkId}`)
+      if (!(await setLinkClicks(linkId, clicks))) throw new Error(`Không có link id ${linkId}`)
 
-      const link = findLinkById(linkId)
+      const link = await findLinkById(linkId)
       console.log(`✓ link ${linkId} — ${clicks} click`)
       if (link) console.log(`  ${truncate(link.name, 50)}  [${link.sub1}|${link.sub2}|${link.sub4}]`)
       break
@@ -141,7 +155,7 @@ async function main(): Promise<void> {
       const file = flag('file')
       if (file === '') throw new Error('Cần --file=<đường dẫn csv>')
 
-      const r = importClicks(file)
+      const r = await importClicks(file)
       console.log(`Đọc ${r.rows} dòng, khớp ${r.matched} link, tổng ${vnd.format(r.totalClicks)} click.`)
       if (r.unmatched > 0) {
         console.log(`⚠ ${r.unmatched} dòng không khớp được với link nào đã lưu:`)
@@ -152,7 +166,7 @@ async function main(): Promise<void> {
     }
 
     case 'clicks:pending': {
-      const pending = linksMissingClicks(intFlag('limit', 20))
+      const pending = await linksMissingClicks(intFlag('limit', 20))
       if (pending.length === 0) {
         console.log('Mọi link đều đã có số click.')
         break
@@ -173,10 +187,10 @@ async function main(): Promise<void> {
     case 'publish': {
       const dryRun = boolFlag('dry-run')
       const limit = intFlag('limit', 3)
-      const run = latestScoreRun()
+      const run = await latestScoreRun()
       if (run === null) throw new Error('Chưa có lượt chấm điểm nào. Chạy `npm run rank` trước.')
 
-      const rows = topScores(limit, run)
+      const rows = await topScores(limit, run)
       if (rows.length === 0) {
         console.log('Không có gì để đăng.')
         break
@@ -233,9 +247,9 @@ async function main(): Promise<void> {
         throw new Error(`--by phải là một trong: ${Object.keys(DIMENSIONS).join(', ')}`)
       }
       const days = intFlag('days', 30)
-      const rows = epcReport(by as Dimension, days)
+      const rows = await epcReport(by as Dimension, days)
 
-      const undated = countUndatedConversions()
+      const undated = await countUndatedConversions()
       if (undated > 0) {
         console.log(
           `⚠ ${undated} đơn không có mốc thời gian nên không nằm trong bất kỳ cửa sổ báo cáo nào.\n`,

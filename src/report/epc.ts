@@ -36,12 +36,12 @@ export type EpcRow = {
   commissionPerPostVnd: number | null
 }
 
-export function epcReport(dimension: Dimension, days: number): EpcRow[] {
+export async function epcReport(dimension: Dimension, days: number): Promise<EpcRow[]> {
   const since = new Date(Date.now() - days * 86_400_000).toISOString()
   const dim = DIMENSIONS[dimension]
 
-  const conversions = conversionsBy(dim.conversionColumn, since)
-  const posts = dim.subColumn === null ? [] : postsBy(dim.subColumn, since)
+  const conversions = await conversionsBy(dim.conversionColumn, since)
+  const posts = dim.subColumn === null ? [] : await postsBy(dim.subColumn, since)
 
   const postsByBucket = new Map(posts.map((p) => [p.bucket, p]))
   const buckets = new Set([...conversions.map((c) => c.bucket), ...posts.map((p) => p.bucket)])

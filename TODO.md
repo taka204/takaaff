@@ -128,13 +128,36 @@ một link đăng lại hai lần sẽ đếm click hai lần. Có test riêng c
 Lệnh `link` giờ cũng lưu link vào DB và in ra id — nếu không, bài đăng tay sẽ không có
 chỗ nào để gắn click và bị mất khỏi EPC.
 
-### [ ] 2.3 Chạy tự động hàng ngày
+### [x] 2.3 Chạy tự động hàng ngày — ĐÃ XONG (code), CÒN PHẦN BẠN BẤM
 
-Task Scheduler trên Windows gọi `ingest` → `rank` → `publish` theo hai khung giờ vàng
-**12:00–13:00** và **20:00–22:00**. Cửa sổ ghi nhận chỉ 7 ngày nên đăng gần thời điểm
-mua có giá trị hơn đăng nhiều.
+Không dùng Task Scheduler nữa: máy cá nhân tắt thì cron không chạy, mà cửa sổ ghi
+nhận của Shopee chỉ có 7 ngày — đăng trễ một ngày là **mất** đơn chứ không phải hoãn.
+Lịch chuyển lên GitHub Actions, dữ liệu chuyển sang Postgres, kèm một dashboard chỉ
+đọc trên Vercel để xem bảng xếp hạng và EPC từ điện thoại. Cả ba đều bậc miễn phí.
+
+`.github/workflows/takaaff.yml`: ingest+rank mỗi 2 tiếng, đăng bài trước hai khung
+giờ vàng **12:00–13:00** và **20:00–22:00**, kéo báo cáo đơn mỗi sáng. Giờ đặt sớm
+hơn khung vàng vì Actions trễ 10–30 phút lúc cao điểm.
+
+Cùng một schema chạy trên SQLite (máy cá nhân, test) và Postgres (cloud) —
+`src/db/driver.ts`. Vòng lặp phát triển hằng ngày vẫn không cần mạng.
+
+**Việc còn lại của bạn** (từng bước một, xem README mục "Chạy trên cloud"):
+
+- [ ] Tạo Postgres ở Neon, rồi `DATABASE_URL='postgresql://...' npm run db:init`
+- [ ] Đặt Secrets trong repo: `DATABASE_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
+- [ ] Đặt Variable: `TAKAAFF_PER_ORDER_CAP_VND` (giá trị thật từ mục 1.1)
+- [ ] `npx vercel deploy --prod`, đặt `DATABASE_URL` và `DASHBOARD_TOKEN`
+- [ ] Bấm workflow_dispatch một lần với `task=ingest-rank` để kiểm tra trước khi tin cron
+
+Hai điều kiện của Actions phải biết trước: scheduled workflow **bị vô hiệu hoá ở repo
+private trên tài khoản miễn phí** (repo phải public, hoặc nâng GitHub Pro), và lịch tự
+tắt sau 60 ngày repo không có hoạt động.
 
 Bảng `ingest_run` đã có sẵn để phát hiện job chết âm thầm — nhớ ngó nó.
+
+Lưu ý về mục 1.6: khi đã lên cloud, "xuất CSV mỗi ngày" trở thành **push CSV vào
+`data/exports/`** — workflow tự kích hoạt và ingest file mới nhất. Không cần chạy tay.
 
 ### [ ] 2.4 Chọn biến thể A/B tự động
 

@@ -1,0 +1,143 @@
+name: TakaAff
+
+# Lịch chạy đặt SỚM hơn khung giờ vàng vì GitHub Actions trễ 10–30 phút lúc cao
+# điểm — đặt đúng giờ thì độ trễ đẩy bài ra ngoài cửa sổ mua sắm.
+#
+# Giờ Việt Nam = UTC+7.
+#
+# LƯU Ý: trên tài khoản cá nhân miễn phí, scheduled workflow BỊ VÔ HIỆU HOÁ ở
+# repo private. Muốn cron chạy thì repo phải public, hoặc nâng lên GitHub Pro.
+# Ngoài ra lịch tự tắt sau 60 ngày repo không có hoạt động.
+
+on:
+  schedule:
+    - cron: '0 */2 * * *'   # ingest snapshot, mỗi 2 tiếng
+    - cron: '45 4 * * *'    # 11:45 VN → đăng trong khung 12:00–13:00
+    - cron: '45 12 * * *'   # 19:45 VN → đăng trong khung 20:00–22:00
+    - cron: '0 1 * * *'     # 08:00 VN → kéo báo cáo đơn
+  push:
+    paths:
+      - 'data/exports/**'   # bỏ CSV xuất tay vào đây rồi push là tự ingest
+  workflow_dispatch:
+    inputs:
+      task:
+        description: Việc cần chạy
+        type: choice
+        options: [ingest-rank, publish, sync, all]
+        default: ingest-rank
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  TAKAAFF_PER_ORDER_CAP_VND: ${{ vars.TAKAAFF_PER_ORDER_CAP_VND }}
+
+jobs:
+  ingest-rank:
+    # Chạy khi: cron 2 tiếng, có push CSV mới, hoặc bấm tay.
+    if: >-
+      github.event_name == 'push' ||
+      github.event.schedule == '0 */2 * * *' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (inputs.task == 'ingest-rank' || inputs.task == 'all'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+
+      - name: Thu thập
+        run: |
+          # Ưu tiên API nếu đã được cấp quyền; chưa có thì đọc file CSV mới nhất
+          # trong data/exports. Không có file nào thì bỏ qua chứ không báo lỗi —
+          # cron 2 tiếng không nên đỏ chỉ vì hôm nay bạn chưa xuất CSV.
+          if [ -n "${SHOPEE_APP_ID}" ]; then
+            npm run ingest -- --source=api --limit=200
+          else
+            latest=$(ls -1t data/exports/*.csv 2>/dev/null | head -1 || true)
+            if [ -n "$latest" ]; then
+              echo "Đọc $latest"
+              npm run ingest -- --source=csv --file="$latest" --limit=500
+            else
+              echo "Chưa có CSV trong data/exports và chưa có quyền API — bỏ qua."
+              exit 0
+            fi
+          fi
+        env:
+          SHOPEE_APP_ID: ${{ secrets.SHOPEE_APP_ID }}
+          SHOPEE_SECRET: ${{ secrets.SHOPEE_SECRET }}
+
+      - name: Chấm điểm
+        run: npm run rank -- --limit=20
+
+  publish:
+    if: >-
+      github.event.schedule == '45 4 * * *' ||
+      github.event.schedule == '45 12 * * *' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (inputs.task == 'publish' || inputs.task == 'all'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+
+      # Chấm điểm lại trước khi đăng: hoa hồng XTRA có hạn thời gian, đăng theo
+      # bảng xếp hạng cũ có thể đẩy hàng đã hết khuyến mãi.
+      - name: Chấm điểm lại
+        run: npm run rank -- --limit=20
+
+      - name: Đăng bài
+        run: npm run publish -- --limit=3 --channel=tg --type=flash
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+  sync:
+    if: >-
+      github.event.schedule == '0 1 * * *' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (inputs.task == 'sync' || inputs.task == 'all'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+
+      - name: Kéo báo cáo đơn
+        run: |
+          if [ -z "${SHOPEE_APP_ID}" ]; then
+            echo "Chưa có quyền Open API — nạp đơn bằng: npm run conversions:import -- --file=<csv>"
+            exit 0
+          fi
+          npm run sync -- --from="$(date -u -d '35 days ago' +%Y-%m-%d)"
+        env:
+          SHOPEE_APP_ID: ${{ secrets.SHOPEE_APP_ID }}
+          SHOPEE_SECRET: ${{ secrets.SHOPEE_SECRET }}
+
+      - name: Báo cáo EPC
+        run: npm run epc -- --by=channel --days=30
+
+  test:
+    # Chạy trên mọi push để refactor không âm thầm làm hỏng engine.
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      # Test chạy trên SQLite, không cần DATABASE_URL.
+      - run: npm test
+        env:
+          DATABASE_URL: ''
+      - run: npm run typecheck

@@ -20,7 +20,7 @@ npm run publish -- --dry-run --limit=2
 Kiểm chứng:
 
 ```bash
-npm test          # 47 test, không cần mạng
+npm test          # 93 test, không cần mạng
 npm install       # chỉ cần cho typecheck
 npm run typecheck
 ```
@@ -124,6 +124,66 @@ tích được.
 | `sub4` | Khung đăng | `260915-20` | Khung giờ nào hiệu quả? |
 | `sub5` | Biến thể A/B | `a` `b` | Tiêu đề nào thắng? |
 
+## Chạy trên cloud
+
+Máy cá nhân tắt thì cron không chạy, mà cửa sổ ghi nhận của Shopee chỉ có 7 ngày —
+đăng trễ một ngày là mất đơn chứ không phải hoãn đơn. Nên phần tự động chuyển lên
+cloud, còn máy cá nhân giữ nguyên vai trò chỗ phát triển.
+
+Ba mảnh, đều ở bậc miễn phí:
+
+| Mảnh | Việc | Vì sao chỗ đó |
+|---|---|---|
+| Neon (Postgres) | Lưu dữ liệu | Actions và Vercel không có ổ đĩa bền |
+| GitHub Actions | Cron: ingest → rank → publish | Đã có sẵn repo, không thêm nhà cung cấp |
+| Vercel | Dashboard chỉ đọc | Xem bảng xếp hạng và EPC từ điện thoại |
+
+### 1. Postgres
+
+Tạo một database ở Neon (hoặc bất kỳ Postgres nào — code dùng `pg` chuẩn, không
+khoá vào nhà cung cấp), lấy chuỗi kết nối, rồi nâng schema **từ máy cá nhân**:
+
+```bash
+DATABASE_URL='postgresql://...' npm run db:init
+```
+
+Migration chỉ chạy từ CLI, không bao giờ chạy từ serverless: bundler của Vercel
+không đóng gói file `.sql`, và nhiều cold start cùng lúc sẽ đua nhau tạo bảng.
+Sau này thêm migration mới thì chạy lại đúng lệnh trên.
+
+Cùng một schema chạy trên cả hai phương ngữ: `src/db/driver.ts` chỉ phải xử lý
+4 điểm lệch trên 22 câu SQL, và có test chặn cú pháp chỉ-có-ở-SQLite lọt vào
+migration.
+
+### 2. GitHub Actions
+
+Trong repo, đặt `DATABASE_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` vào
+**Secrets**, và `TAKAAFF_PER_ORDER_CAP_VND` vào **Variables**.
+
+`.github/workflows/takaaff.yml` chạy ingest+rank mỗi 2 tiếng, đăng bài trước hai
+khung giờ vàng, và kéo báo cáo đơn mỗi sáng. Lịch đặt sớm hơn giờ mong muốn vì
+Actions trễ 10–30 phút lúc cao điểm.
+
+Chưa có quyền Open API thì đường nạp dữ liệu là **push file CSV vào
+`data/exports/`** — workflow tự kích hoạt và ingest file mới nhất.
+
+Hai điều kiện của Actions đáng biết trước: scheduled workflow **bị vô hiệu hoá ở
+repo private trên tài khoản miễn phí**, và lịch tự tắt sau 60 ngày repo không có
+hoạt động.
+
+### 3. Dashboard
+
+```bash
+npx vercel deploy --prod
+```
+
+Đặt `DATABASE_URL` và `DASHBOARD_TOKEN` trong environment variables của Vercel,
+rồi mở `https://<dự-án>.vercel.app/?token=<DASHBOARD_TOKEN>`.
+
+Dashboard **chỉ đọc**. Mọi thay đổi dữ liệu đi qua CLI, nơi có test bảo vệ — một
+endpoint ghi trên internet là bề mặt tấn công không cần thiết cho thứ mà chỉ một
+người dùng. `DASHBOARD_TOKEN` để trống thì API trả 503 chứ không mở toang.
+
 ## Trạng thái
 
 Đã xong **M1** (lõi: thu thập, chấm điểm, xếp hạng, tuân thủ) và **M2** (phân
@@ -136,3 +196,8 @@ với tài liệu chính thức khi được cấp quyền.
 **M4** (`sync-conversions`, báo cáo EPC) chạy được về mặt code, nhưng cách Shopee
 trả `subId` trong `conversionReport` chưa xác minh được — xem ghi chú trong
 `src/jobs/sync-conversions.ts`.
+
+**M5** (chạy trên cloud: lớp driver SQLite/Postgres, cron GitHub Actions, dashboard
+Vercel chỉ đọc) đã xong về code và chạy được trên SQLite. Đường Postgres đúng về mặt
+phương ngữ và có test chặn cú pháp lệch, nhưng **chưa chạy trên một Postgres thật** —
+bước xác minh đầu tiên là `DATABASE_URL='postgresql://...' npm run db:init`.

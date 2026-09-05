@@ -22,6 +22,8 @@ function str(key: string, fallback = ''): string {
 }
 
 export type Config = {
+  /** Có giá trị thì dùng Postgres (cloud); để trống thì dùng SQLite (máy cá nhân). */
+  databaseUrl: string
   dbPath: string
   /**
    * Trần hoa hồng mỗi đơn. Một trong bốn tham số chưa xác minh — các nguồn công
@@ -40,9 +42,12 @@ export type Config = {
     botToken: string
     chatId: string
   }
+  /** Token bảo vệ dashboard. Trống nghĩa là API dashboard bị khoá hoàn toàn. */
+  dashboardToken: string
 }
 
 export const config: Config = {
+  databaseUrl: str('DATABASE_URL'),
   dbPath: str('TAKAAFF_DB_PATH', 'data/takaaff.db'),
   perOrderCapVnd: num('TAKAAFF_PER_ORDER_CAP_VND', 30_000),
   minPriceVnd: num('TAKAAFF_MIN_PRICE_VND', 50_000),
@@ -56,6 +61,7 @@ export const config: Config = {
     botToken: str('TELEGRAM_BOT_TOKEN'),
     chatId: str('TELEGRAM_CHAT_ID'),
   },
+  dashboardToken: str('DASHBOARD_TOKEN'),
 }
 
 export function hasShopeeCredentials(): boolean {

@@ -36,7 +36,7 @@ export async function importConversions(
   }
 
   for (const r of records) {
-    upsertConversion({
+    await upsertConversion({
       orderId: r.orderId,
       itemId: r.itemId,
       source: r.source,

@@ -9,9 +9,11 @@ import { scoreCandidate } from '../scoring/score.ts'
  * Điểm được ghi thành bản mới mỗi lần chạy chứ không ghi đè, vì cần so được
  * bảng xếp hạng hôm nay với hôm qua khi công thức thay đổi.
  */
-export function rank(limit: number): { computedAt: string; scored: number; rows: RankedRow[] } {
+export async function rank(
+  limit: number,
+): Promise<{ computedAt: string; scored: number; rows: RankedRow[] }> {
   const computedAt = new Date().toISOString()
-  const candidates = listCandidates()
+  const candidates = await listCandidates()
 
   const params = {
     perOrderCapVnd: config.perOrderCapVnd,
@@ -32,7 +34,7 @@ export function rank(limit: number): { computedAt: string; scored: number; rows:
     }
   })
 
-  insertScores(scores)
+  await insertScores(scores)
 
-  return { computedAt, scored: scores.length, rows: topScores(limit, computedAt) }
+  return { computedAt, scored: scores.length, rows: await topScores(limit, computedAt) }
 }

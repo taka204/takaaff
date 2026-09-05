@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Shopee affiliate deal engine - chấm điểm sản phẩm theo giá trị kỳ vọng mỗi click",
   "engines": {
-    "node": ">=24"
+    "node": "24.x"
   },
   "scripts": {
     "db:init": "node --disable-warning=ExperimentalWarning src/cli.ts db:init",
@@ -25,6 +25,10 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "@types/pg": "^8.23.1",
     "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "pg": "^8.23.0"
   }
 }

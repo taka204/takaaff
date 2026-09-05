@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>TakaAff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F6F8F7; --surface:#FFFFFF; --surface-2:#EDF2F0;
+  --ink:#141C1A; --ink-2:#33423E; --muted:#5B6B66; --border:#DCE4E1; --border-2:#C6D2CE;
+  --accent:#1B6B5A; --accent-ink:#0E4438; --accent-wash:#E4F0EC;
+  --warn:#8F5410; --warn-wash:#F7EEDF;
+  --crit:#9C3220;
+  --shadow:0 1px 2px rgba(20,28,26,.05), 0 8px 24px -18px rgba(20,28,26,.35);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1413; --surface:#161E1C; --surface-2:#1D2624;
+    --ink:#E4ECE9; --ink-2:#C3D0CC; --muted:#8FA29D; --border:#26312E; --border-2:#33403C;
+    --accent:#52BFA2; --accent-ink:#8FDCC6; --accent-wash:#14302A;
+    --warn:#D9A054; --warn-wash:#2E2416;
+    --crit:#E08872;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1413; --surface:#161E1C; --surface-2:#1D2624;
+  --ink:#E4ECE9; --ink-2:#C3D0CC; --muted:#8FA29D; --border:#26312E; --border-2:#33403C;
+  --accent:#52BFA2; --accent-ink:#8FDCC6; --accent-wash:#14302A;
+  --warn:#D9A054; --warn-wash:#2E2416;
+  --crit:#E08872;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:Archivo,"Helvetica Neue",Arial,sans-serif;
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.mono,.num{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace; font-variant-numeric:tabular-nums}
+.wrap{max-width:1080px; margin:0 auto; padding:0 20px}
+
+header{background:var(--surface); border-bottom:1px solid var(--border); padding:22px 0}
+.bar{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap}
+h1{margin:0; font-size:21px; font-weight:700; letter-spacing:-.02em}
+.sub{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+.spacer{flex:1}
+
+section{padding:30px 0}
+.head{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px}
+h2{margin:0; font-size:16px; font-weight:600; letter-spacing:-.01em}
+.stamp{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--muted)}
+
+.tabs{display:flex; gap:4px; flex-wrap:wrap}
+.tab{
+  font:inherit; font-size:12.5px; font-weight:500; cursor:pointer;
+  background:var(--surface); color:var(--ink-2);
+  border:1px solid var(--border); padding:5px 11px; border-radius:2px;
+}
+.tab[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
+:root:not([data-theme="light"]) .tab[aria-pressed="true"]{color:#0E1413}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tab[aria-pressed="true"]{color:#0E1413}}
+.tab:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+.card{border:1px solid var(--border); background:var(--surface); box-shadow:var(--shadow); overflow-x:auto}
+table{border-collapse:collapse; width:100%; min-width:600px; font-size:13.5px}
+th{
+  font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.1em;
+  text-transform:uppercase; font-weight:600; text-align:left; color:var(--muted);
+  padding:10px 14px; background:var(--surface-2); border-bottom:1px solid var(--border-2); white-space:nowrap;
+}
+td{padding:10px 14px; border-bottom:1px solid var(--border); vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+th.r,td.r{text-align:right}
+td.name{font-weight:500; min-width:220px}
+.dim{color:var(--muted); font-size:12px}
+
+.pill{
+  display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600;
+  letter-spacing:.06em; padding:2px 6px; border-radius:2px;
+  background:var(--accent-wash); color:var(--accent-ink); border:1px solid var(--border);
+}
+.pill.flat{background:transparent; color:var(--muted)}
+.warn{color:var(--warn)} .crit{color:var(--crit)} .none{color:var(--muted)}
+
+.note{
+  background:var(--warn-wash); border:1px solid var(--border); border-left:3px solid var(--warn);
+  padding:12px 16px; margin-bottom:14px; font-size:13.5px;
+}
+.foot{color:var(--muted); font-size:12.5px; padding:6px 0 40px; line-height:1.6}
+
+#gate{max-width:400px; margin:14vh auto; padding:0 20px}
+#gate p{color:var(--muted); font-size:13.5px}
+.row{display:flex; gap:8px; margin-top:14px}
+input{
+  flex:1; font:inherit; font-family:"IBM Plex Mono",monospace; font-size:13px;
+  padding:9px 11px; border:1px solid var(--border-2); border-radius:2px;
+  background:var(--surface); color:var(--ink);
+}
+input:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+button.go{
+  font:inherit; font-weight:600; font-size:13px; cursor:pointer; padding:9px 16px;
+  background:var(--accent); color:#fff; border:1px solid var(--accent); border-radius:2px;
+}
+:root[data-theme="dark"] button.go{color:#0E1413}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) button.go{color:#0E1413}}
+.err{color:var(--crit); font-size:13px; margin-top:10px; min-height:18px}
+[hidden]{display:none !important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <h1>TakaAff</h1>
+  <p>Dashboard hiển thị dữ liệu kinh doanh nên cần token. Lấy từ biến môi trường
+     <span class="mono">DASHBOARD_TOKEN</span>.</p>
+  <div class="row">
+    <input id="token" type="password" placeholder="DASHBOARD_TOKEN" autocomplete="off" spellcheck="false">
+    <button class="go" id="enter">Mở</button>
+  </div>
+  <div class="err" id="gateErr"></div>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <div class="wrap bar">
+      <h1>TakaAff</h1>
+      <span class="sub" id="capNote"></span>
+      <span class="spacer"></span>
+      <button class="tab" id="signout">Đăng xuất</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section>
+      <div class="head">
+        <h2>Bảng xếp hạng</h2>
+        <span class="stamp" id="rankStamp"></span>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr>
+            <th>Sản phẩm</th>
+            <th class="r">EV/click</th>
+            <th class="r">Hoa hồng</th>
+            <th class="r">Giá</th>
+            <th class="r">Đánh giá</th>
+          </tr></thead>
+          <tbody id="rankBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="head">
+        <h2>Báo cáo EPC</h2>
+        <div class="tabs" id="dims"></div>
+      </div>
+      <div id="undated"></div>
+      <div class="card">
+        <table>
+          <thead><tr>
+            <th>Nhóm</th>
+            <th class="r">Đơn</th>
+            <th class="r">Đã đối soát</th>
+            <th class="r">Còn treo</th>
+            <th class="r">Click</th>
+            <th class="r">EPC</th>
+          </tr></thead>
+          <tbody id="epcBody"></tbody>
+        </table>
+      </div>
+      <p class="foot">
+        <strong>Đã đối soát</strong> là tiền chắc chắn. <strong>Còn treo</strong> gồm cả đơn chưa
+        đối soát nên chỉ là trần trên — chu kỳ đối soát khoảng T+30.<br>
+        EPC tính trên cột đã đối soát. Nhóm hiện <span class="none">—</span> là chưa nhập số click:
+        chạy <span class="mono">npm run clicks:pending</span>.
+      </p>
+    </section>
+  </div>
+</div>
+
+<script>
+const DIMS = [
+  ['channel', 'Kênh'], ['source', 'Nguồn đơn'], ['type', 'Loại bài'],
+  ['category', 'Ngành hàng'], ['slot', 'Khung đăng'], ['variant', 'Biến thể'],
+]
+const vnd = new Intl.NumberFormat('vi-VN')
+const $ = (id) => document.getElementById(id)
+let token = localStorage.getItem('takaaff_token') || ''
+let dim = 'channel'
+
+async function api(path) {
+  const res = await fetch(path, { headers: { 'x-takaaff-token': token } })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.error || ('HTTP ' + res.status))
+  }
+  return res.json()
+}
+
+function money(n) { return vnd.format(Math.round(n)) + 'đ' }
+
+function renderRank(data) {
+  $('capNote').textContent = 'trần ' + money(data.perOrderCapVnd) + '/đơn'
+  $('rankStamp').textContent = data.computedAt
+    ? 'chấm lúc ' + new Date(data.computedAt).toLocaleString('vi-VN')
+    : 'chưa có lượt chấm điểm nào'
+
+  $('rankBody').innerHTML = data.rows.length === 0
+    ? '<tr><td colspan="5" class="dim">Chưa có dữ liệu. Chạy <span class="mono">npm run ingest</span> rồi <span class="mono">npm run rank</span>.</td></tr>'
+    : data.rows.map((r) => {
+        const off = r.originalPriceVnd > r.priceVnd && r.originalPriceVnd > 0
+          ? Math.round((1 - r.priceVnd / r.originalPriceVnd) * 100) : 0
+        return '<tr>'
+          + '<td class="name">' + esc(r.name)
+            + '<div class="dim">' + esc(r.categoryPath || '—')
+            + (r.salesCount > 0 ? ' · đã bán ' + vnd.format(r.salesCount) : '') + '</div></td>'
+          + '<td class="r num">' + r.evPerClick.toFixed(1) + 'đ</td>'
+          + '<td class="r"><span class="pill' + (r.hasXtra ? '' : ' flat') + '">'
+            + (r.hasXtra ? '★ ' : '') + (r.effectiveRate * 100).toFixed(1) + '%</span></td>'
+          + '<td class="r num">' + money(r.priceVnd)
+            + (off > 0 ? '<div class="dim">−' + off + '%</div>' : '') + '</td>'
+          + '<td class="r num' + (r.rating > 0 && r.rating < 4 ? ' warn' : '') + '">'
+            + (r.rating > 0 ? r.rating.toFixed(1) : '—') + '</td>'
+          + '</tr>'
+      }).join('')
+}
+
+function renderEpc(data) {
+  $('undated').innerHTML = data.undatedConversions > 0
+    ? '<div class="note">' + data.undatedConversions + ' đơn không có mốc thời gian nên không nằm trong bất kỳ cửa sổ báo cáo nào.</div>'
+    : ''
+
+  $('epcBody').innerHTML = data.rows.length === 0
+    ? '<tr><td colspan="6" class="dim">Chưa có đơn nào trong ' + data.days + ' ngày qua.</td></tr>'
+    : data.rows.map((r) =>
+        '<tr>'
+        + '<td class="name">' + esc(r.bucket) + '</td>'
+        + '<td class="r num">' + r.confirmedOrders + '/' + r.orders + '</td>'
+        + '<td class="r num">' + money(r.confirmedCommissionVnd) + '</td>'
+        + '<td class="r num dim">' + money(r.pendingCommissionVnd) + '</td>'
+        + '<td class="r num">' + (r.clicks > 0 ? vnd.format(r.clicks) : '<span class="none">0</span>') + '</td>'
+        + '<td class="r num">' + (r.epcVnd !== null ? '<strong>' + money(r.epcVnd) + '</strong>'
+            : r.commissionPerPostVnd !== null ? '<span class="dim">' + money(r.commissionPerPostVnd) + '/bài</span>'
+            : '<span class="none">—</span>') + '</td>'
+        + '</tr>'
+      ).join('')
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+}
+
+function renderDims() {
+  $('dims').innerHTML = DIMS.map(([k, label]) =>
+    '<button class="tab" data-dim="' + k + '" aria-pressed="' + (k === dim) + '">' + label + '</button>'
+  ).join('')
+  for (const b of $('dims').children) {
+    b.onclick = () => { dim = b.dataset.dim; renderDims(); loadEpc() }
+  }
+}
+
+async function loadEpc() {
+  try { renderEpc(await api('/api/epc?by=' + dim + '&days=3650')) }
+  catch (e) { $('epcBody').innerHTML = '<tr><td colspan="6" class="crit">' + esc(e.message) + '</td></tr>' }
+}
+
+async function boot() {
+  const data = await api('/api/rank?limit=25')
+  $('gate').hidden = true
+  $('app').hidden = false
+  renderRank(data)
+  renderDims()
+  await loadEpc()
+}
+
+$('enter').onclick = async () => {
+  token = $('token').value.trim()
+  $('gateErr').textContent = ''
+  try {
+    await boot()
+    localStorage.setItem('takaaff_token', token)
+  } catch (e) {
+    $('gateErr').textContent = e.message
+  }
+}
+$('token').onkeydown = (e) => { if (e.key === 'Enter') $('enter').click() }
+$('signout').onclick = () => { localStorage.removeItem('takaaff_token'); location.reload() }
+
+if (token) boot().catch(() => { localStorage.removeItem('takaaff_token') })
+</script>
+</body>
+</html>

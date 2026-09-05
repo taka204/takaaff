@@ -21,7 +21,7 @@ export async function ingest(
   opts: { keyword?: string; limit: number },
 ): Promise<IngestResult> {
   const startedAt = new Date().toISOString()
-  const runId = startIngestRun(source.name, startedAt)
+  const runId = await startIngestRun(source.name, startedAt)
 
   const result: IngestResult = { seen: 0, stored: 0, blocked: 0, blockedSamples: [] }
 
@@ -41,7 +41,7 @@ export async function ingest(
         continue
       }
 
-      upsertProduct(
+      await upsertProduct(
         {
           itemId: offer.itemId,
           shopId: offer.shopId,
@@ -52,7 +52,7 @@ export async function ingest(
         capturedAt,
       )
 
-      insertSnapshot(
+      await insertSnapshot(
         {
           itemId: offer.itemId,
           priceVnd: offer.priceVnd,
@@ -69,10 +69,10 @@ export async function ingest(
       result.stored += 1
     }
 
-    finishIngestRun(runId, result.seen, result.blocked, null)
+    await finishIngestRun(runId, result.seen, result.blocked, null)
     return result
   } catch (err) {
-    finishIngestRun(runId, result.seen, result.blocked, String(err))
+    await finishIngestRun(runId, result.seen, result.blocked, String(err))
     throw err
   }
 }

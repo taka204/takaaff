@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS product (
 -- Biến động giá và hoa hồng giữa các dòng mới là tín hiệu; dữ liệu lịch sử
 -- không thể lấy bù về sau nên bảng này bắt đầu ghi từ ngày đầu tiên.
 CREATE TABLE IF NOT EXISTS product_snapshot (
-  id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+  id                   {{SERIAL_PK}},
   item_id              TEXT NOT NULL REFERENCES product(item_id),
   captured_at          TEXT NOT NULL,
   price_vnd            INTEGER NOT NULL,
@@ -30,7 +30,7 @@ CREATE INDEX IF NOT EXISTS idx_snapshot_item_time
 -- Kết quả chấm điểm. reasons_json giữ lại từng hệ số để sau còn truy được
 -- vì sao một sản phẩm được đẩy lên đầu bảng.
 CREATE TABLE IF NOT EXISTS score (
-  id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+  id                    {{SERIAL_PK}},
   item_id               TEXT NOT NULL REFERENCES product(item_id),
   computed_at           TEXT NOT NULL,
   ev_per_click          REAL NOT NULL,
@@ -44,7 +44,7 @@ CREATE INDEX IF NOT EXISTS idx_score_time_ev
 
 -- Link đã sinh, kèm đủ 5 tham số subId.
 CREATE TABLE IF NOT EXISTS link (
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  id         {{SERIAL_PK}},
   item_id    TEXT NOT NULL REFERENCES product(item_id),
   short_url  TEXT NOT NULL,
   sub1       TEXT NOT NULL,
@@ -59,7 +59,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_link_subids
 
 -- Bài đã đăng. clicks để trống cho tới khi có số liệu từ dashboard.
 CREATE TABLE IF NOT EXISTS post (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  id          {{SERIAL_PK}},
   channel     TEXT NOT NULL,
   link_id     INTEGER REFERENCES link(id),
   item_id     TEXT NOT NULL REFERENCES product(item_id),
@@ -75,7 +75,7 @@ CREATE INDEX IF NOT EXISTS idx_post_channel_time ON post(channel, posted_at DESC
 -- KHÔNG mang subId, nên cần đường nhập riêng. Không tách từ đầu thì EPC giữa
 -- hai kênh không so được với nhau.
 CREATE TABLE IF NOT EXISTS conversion (
-  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  id              {{SERIAL_PK}},
   order_id        TEXT NOT NULL,
   item_id         TEXT NOT NULL DEFAULT '',
   source          TEXT NOT NULL CHECK (source IN ('link', 'video')),
@@ -96,7 +96,7 @@ CREATE INDEX IF NOT EXISTS idx_conversion_ordered_at ON conversion(ordered_at DE
 
 -- Nhật ký chạy job, để phát hiện job chết âm thầm.
 CREATE TABLE IF NOT EXISTS ingest_run (
-  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  id            {{SERIAL_PK}},
   source        TEXT NOT NULL,
   started_at    TEXT NOT NULL,
   finished_at   TEXT,

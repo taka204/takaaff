@@ -121,8 +121,11 @@ export async function publish(
   }
 
   const now = new Date().toISOString()
-  const linkId = composed.url === '' ? null : upsertLink(row.itemId, composed.url, composed.subIds, now)
-  insertPost(
+  const linkId =
+    composed.url === ''
+      ? null
+      : await upsertLink(row.itemId, composed.url, composed.subIds, now)
+  await insertPost(
     opts.channel,
     linkId,
     row.itemId,

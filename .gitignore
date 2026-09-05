@@ -10,5 +10,8 @@ data/*.db
 data/*.db-journal
 data/*.db-wal
 data/*.db-shm
-data/exports/
+
+# data/exports KHÔNG bị ignore: workflow kích hoạt khi push vào đó, đó là cách
+# đưa CSV xuất tay lên cloud khi chưa có quyền Open API. Nội dung là dữ liệu
+# niêm yết công khai của Shopee, nhưng nếu repo để public thì chúng cũng public.
 *.log

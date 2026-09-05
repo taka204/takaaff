@@ -32,7 +32,7 @@ export type ClickImportResult = {
   unmatchedSamples: string[]
 }
 
-export function importClicks(filePath: string): ClickImportResult {
+export async function importClicks(filePath: string): Promise<ClickImportResult> {
   const rows = parseCsv(readFileSync(filePath, 'utf8'))
   const result: ClickImportResult = {
     rows: 0,
@@ -84,12 +84,12 @@ export function importClicks(filePath: string): ClickImportResult {
         sub5: get('sub5'),
       }
       label = Object.values(subIds).join('|')
-      changed = setClicksBySubIds(subIds, clicks)
+      changed = await setClicksBySubIds(subIds, clicks)
     }
 
     if (changed === 0 && get('shortUrl') !== '') {
       label = get('shortUrl')
-      changed = setClicksByUrl(get('shortUrl'), clicks)
+      changed = await setClicksByUrl(get('shortUrl'), clicks)
     }
 
     if (changed > 0) {

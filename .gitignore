@@ -15,3 +15,12 @@ data/*.db-shm
 # đưa CSV xuất tay lên cloud khi chưa có quyền Open API. Nội dung là dữ liệu
 # niêm yết công khai của Shopee, nhưng nếu repo để public thì chúng cũng public.
 *.log
+
+.vercel
+.env*
+
+# api/ chứa bundle sinh ra lúc build, không phải mã nguồn. Nguồn ở src/api/.
+# Vercel biên dịch từng file .ts riêng lẻ chứ không bundle, nên nó để nguyên
+# chuỗi import './_auth.ts' rồi không resolve được lúc chạy. Tự bundle là cách
+# giữ được quy ước .ts của repo mà vẫn ra thứ Vercel chạy được.
+api/

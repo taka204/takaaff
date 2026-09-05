@@ -1,9 +1,10 @@
 import { intParam, json, unauthorized } from './_auth.ts'
-import { DIMENSIONS, epcReport } from '../src/report/epc.ts'
-import type { Dimension } from '../src/report/epc.ts'
-import { countUndatedConversions } from '../src/db/repo.ts'
+import { toNodeHandler } from './_node.ts'
+import { DIMENSIONS, epcReport } from '../report/epc.ts'
+import type { Dimension } from '../report/epc.ts'
+import { countUndatedConversions } from '../db/repo.ts'
 
-export default async function handler(request: Request): Promise<Response> {
+export async function handle(request: Request): Promise<Response> {
   const denied = unauthorized(request)
   if (denied) return denied
 
@@ -26,3 +27,5 @@ export default async function handler(request: Request): Promise<Response> {
     rows,
   })
 }
+
+export default toNodeHandler(handle)

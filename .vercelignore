@@ -1,0 +1,19 @@
+# .env chứa mật khẩu Neon và PAT GitHub — biến môi trường của Vercel được đặt
+# riêng qua `vercel env`, không bao giờ đi kèm mã nguồn.
+.env
+.env.*
+!.env.example
+
+# DB cục bộ và dữ liệu xuất tay: không liên quan tới hàm serverless.
+data/
+*.db
+*.db-wal
+*.db-shm
+
+node_modules/
+.git/
+tests/
+.agents/
+.claude/
+.github/
+plan.html

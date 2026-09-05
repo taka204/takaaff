@@ -3,14 +3,16 @@
     "target": "ES2023",
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "lib": ["ES2023"],
-    "types": ["node"],
-
+    "lib": [
+      "ES2023"
+    ],
+    "types": [
+      "node"
+    ],
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "exactOptionalPropertyTypes": false,
-
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
     "allowImportingTsExtensions": true,
@@ -19,5 +21,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "api/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts"
+  ]
 }

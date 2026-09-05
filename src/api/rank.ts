@@ -1,6 +1,7 @@
 import { intParam, json, unauthorized } from './_auth.ts'
-import { latestScoreRun, topScores } from '../src/db/repo.ts'
-import { config } from '../src/config.ts'
+import { toNodeHandler } from './_node.ts'
+import { latestScoreRun, topScores } from '../db/repo.ts'
+import { config } from '../config.ts'
 
 /**
  * Bảng xếp hạng của lượt chấm điểm gần nhất.
@@ -9,7 +10,7 @@ import { config } from '../src/config.ts'
  * bảo vệ. Một endpoint ghi trên internet là bề mặt tấn công không cần thiết cho
  * thứ mà chỉ một người dùng.
  */
-export default async function handler(request: Request): Promise<Response> {
+export async function handle(request: Request): Promise<Response> {
   const denied = unauthorized(request)
   if (denied) return denied
 
@@ -42,3 +43,5 @@ export default async function handler(request: Request): Promise<Response> {
     })),
   })
 }
+
+export default toNodeHandler(handle)

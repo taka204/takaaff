@@ -21,11 +21,13 @@
     "epc": "node --disable-warning=ExperimentalWarning src/cli.ts epc",
     "shopee:ping": "node --disable-warning=ExperimentalWarning src/cli.ts shopee:ping",
     "test": "node --disable-warning=ExperimentalWarning --test \"tests/**/*.test.ts\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "esbuild src/api/rank.ts src/api/epc.ts --bundle --platform=node --format=esm --target=node20 --outdir=api --external:pg"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
     "@types/pg": "^8.23.1",
+    "esbuild": "^0.28.2",
     "typescript": "^5.7.0"
   },
   "dependencies": {

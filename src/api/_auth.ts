@@ -1,5 +1,5 @@
 import { timingSafeEqual } from 'node:crypto'
-import { config } from '../src/config.ts'
+import { config } from '../config.ts'
 
 /**
  * Bảo vệ dashboard.

@@ -367,23 +367,119 @@ export function countUndatedConversions(): number {
 
 export type PostBucket = { bucket: string; posts: number; clicks: number }
 
+/**
+ * Gộp theo link chứ không theo bài đăng.
+ *
+ * Click nằm trên `link` vì dashboard báo theo tổ hợp sub_id. Nếu join thẳng
+ * post → link rồi cộng, một link được đăng lại hai lần sẽ bị đếm click hai lần.
+ * Đếm số bài trong subquery riêng để mỗi link chỉ đóng góp click đúng một lần.
+ */
 export function postsBy(subColumn: string, since: string): PostBucket[] {
   return db()
     .prepare(
       `SELECT l.${subColumn} AS bucket,
-              COUNT(p.id) AS posts,
-              SUM(COALESCE(p.clicks, 0)) AS clicks
-       FROM post p
-       JOIN link l ON l.id = p.link_id
-       WHERE p.posted_at >= ?
+              SUM(COALESCE(l.clicks, 0)) AS clicks,
+              SUM(COALESCE(pc.n, 0)) AS posts
+       FROM link l
+       LEFT JOIN (SELECT link_id, COUNT(*) AS n FROM post GROUP BY link_id) pc
+         ON pc.link_id = l.id
+       WHERE l.created_at >= ?
        GROUP BY bucket`,
     )
     .all(since)
     .map((r) => ({
       bucket: String(r['bucket'] ?? ''),
-      posts: Number(r['posts']),
+      posts: Number(r['posts'] ?? 0),
       clicks: Number(r['clicks'] ?? 0),
     }))
+}
+
+// --- Click -----------------------------------------------------------------
+
+export type LinkRow = {
+  id: number
+  itemId: string
+  name: string
+  shortUrl: string
+  sub1: string
+  sub2: string
+  sub3: string
+  sub4: string
+  sub5: string
+  clicks: number | null
+  createdAt: string
+}
+
+function mapLinkRow(r: Record<string, unknown>): LinkRow {
+  return {
+    id: Number(r['id']),
+    itemId: String(r['item_id']),
+    name: String(r['name'] ?? ''),
+    shortUrl: String(r['short_url']),
+    sub1: String(r['sub1']),
+    sub2: String(r['sub2']),
+    sub3: String(r['sub3']),
+    sub4: String(r['sub4']),
+    sub5: String(r['sub5']),
+    clicks: r['clicks'] === null || r['clicks'] === undefined ? null : Number(r['clicks']),
+    createdAt: String(r['created_at']),
+  }
+}
+
+const LINK_SELECT = `
+  SELECT l.id, l.item_id, l.short_url, l.sub1, l.sub2, l.sub3, l.sub4, l.sub5,
+         l.clicks, l.created_at, p.name
+  FROM link l
+  LEFT JOIN product p ON p.item_id = l.item_id
+`
+
+export function setLinkClicks(linkId: number, clicks: number): boolean {
+  const info = db()
+    .prepare('UPDATE link SET clicks = ?, clicks_updated_at = ? WHERE id = ?')
+    .run(Math.max(0, Math.round(clicks)), new Date().toISOString(), linkId)
+  return Number(info.changes) > 0
+}
+
+/** Khớp theo đúng tổ hợp 5 subId — cách dashboard báo cáo click. */
+export function setClicksBySubIds(
+  s: { sub1: string; sub2: string; sub3: string; sub4: string; sub5: string },
+  clicks: number,
+): number {
+  const info = db()
+    .prepare(
+      `UPDATE link SET clicks = ?, clicks_updated_at = ?
+       WHERE sub1 = ? AND sub2 = ? AND sub3 = ? AND sub4 = ? AND sub5 = ?`,
+    )
+    .run(
+      Math.max(0, Math.round(clicks)),
+      new Date().toISOString(),
+      s.sub1,
+      s.sub2,
+      s.sub3,
+      s.sub4,
+      s.sub5,
+    )
+  return Number(info.changes)
+}
+
+export function setClicksByUrl(shortUrl: string, clicks: number): number {
+  const info = db()
+    .prepare('UPDATE link SET clicks = ?, clicks_updated_at = ? WHERE short_url = ?')
+    .run(Math.max(0, Math.round(clicks)), new Date().toISOString(), shortUrl)
+  return Number(info.changes)
+}
+
+/** Link chưa có số click — danh sách việc cần nhập tay mỗi ngày. */
+export function linksMissingClicks(limit: number): LinkRow[] {
+  return db()
+    .prepare(`${LINK_SELECT} WHERE l.clicks IS NULL ORDER BY l.created_at DESC LIMIT ?`)
+    .all(limit)
+    .map(mapLinkRow)
+}
+
+export function findLinkById(linkId: number): LinkRow | null {
+  const row = db().prepare(`${LINK_SELECT} WHERE l.id = ?`).get(linkId)
+  return row ? mapLinkRow(row) : null
 }
 
 // --- Nhật ký job ------------------------------------------------------------

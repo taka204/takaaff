@@ -107,15 +107,26 @@ npm run epc -- --by=source
 trong `src/sources/conversion-csv.ts` đang đoán dựa trên tên thường gặp; thiếu cột nào
 thì thêm một dòng vào `HEADER_ALIASES`.
 
-### [ ] 2.2 `clicks:set` — nhập số click thủ công
+### [x] 2.2 Nhập số click — ĐÃ XONG
 
-Đã ghi trong `src/report/epc.ts`: Shopee không trả số click theo subId qua API, chỉ hiện
-trên dashboard. Cột `post.clicks` đang để trống.
+EPC đã chạy được. Ba lệnh, dùng theo thứ tự này mỗi ngày:
 
-Không có click thì không có EPC — mà EPC là chỉ số bắc đẩu. Hiện báo cáo lùi về
-"hoa hồng trên mỗi bài", so sánh được nhưng thô hơn.
+```bash
+npm run clicks:pending                                  # link nào còn thiếu
+npm run clicks:set -- --link=3 --clicks=157             # nhập từng cái
+npm run clicks:import -- --file=data/exports/click.csv  # hoặc nạp hàng loạt
+```
 
-Một lệnh nhập tay, 2 phút mỗi ngày, là đủ để chỉ số chính hoạt động.
+`clicks:import` khớp theo tổ hợp 5 subId — đúng độ hạt dashboard báo cáo — và rơi về
+khớp theo URL khi file không có cột subId. Dòng nào không khớp được sẽ hiện ra chứ không
+bị nuốt im lặng.
+
+Đi kèm một sửa chữa về độ hạt: cột `clicks` đã chuyển từ `post` sang `link`
+(migration 002). Dashboard báo click theo tổ hợp sub_id tức là theo link; để ở `post` thì
+một link đăng lại hai lần sẽ đếm click hai lần. Có test riêng cho đúng tình huống đó.
+
+Lệnh `link` giờ cũng lưu link vào DB và in ra id — nếu không, bài đăng tay sẽ không có
+chỗ nào để gắn click và bị mất khỏi EPC.
 
 ### [ ] 2.3 Chạy tự động hàng ngày
 

@@ -72,8 +72,11 @@ Các nguồn công khai mâu thuẫn nhau. Sửa trong `.env` sau khi tra dashbo
 db:init                                        tạo/nâng cấp schema
 ingest  --source=csv|api [--file=] [--limit=]  thu thập offer vào DB
 rank    [--limit=20] [--json]                  chấm điểm và xếp hạng
-link    --item=<id> [--channel=] [--type=]     sinh link kèm subId
+link    --item=<id> [--channel=] [--type=]     sinh link kèm subId, lưu lại
 publish [--dry-run] [--limit=3]                đăng lên Telegram
+clicks:pending [--limit=20]                    link chưa có số click
+clicks:set --link=<id> --clicks=<N>            nhập click cho một link
+clicks:import --file=<csv>                     nạp click hàng loạt từ dashboard
 conversions:import --file=<csv> [--from=] [--to=] [--default-source=link|video]
                                                nạp đơn từ CSV dashboard
 sync    [--from=] [--to=]                      như trên, nhưng lấy qua API
@@ -94,6 +97,19 @@ npm run epc -- --by=source
 Báo cáo tách **"đã đối soát"** khỏi **"còn treo"**. Gộp hai con số là cách âm thầm thổi
 phồng hiệu quả: chu kỳ đối soát khoảng T+30 nên trong tháng đầu gần như mọi đơn đều đang
 treo, và một phần sẽ bị huỷ hoặc hoàn. EPC luôn tính trên cột đã đối soát.
+
+Số click phải nhập tay vì Shopee không trả click theo subId qua API — chỉ hiện trên
+dashboard. Đây là giới hạn của nền tảng, không phải của công cụ, nên vẫn đúng cả sau khi
+được cấp quyền API.
+
+```bash
+npm run clicks:pending                       # link nào còn thiếu
+npm run clicks:set -- --link=3 --clicks=157  # nhập từng cái
+npm run clicks:import -- --file=click.csv    # hoặc nạp hàng loạt
+```
+
+Click nằm trên bảng `link`, không phải `post`: dashboard báo theo tổ hợp sub_id tức là
+theo link, nên để ở `post` thì một link đăng lại hai lần sẽ bị đếm click hai lần.
 
 ## Lược đồ subId
 

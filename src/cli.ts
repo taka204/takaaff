@@ -1,10 +1,19 @@
 import { parseArgs } from 'node:util'
 import { config, hasShopeeCredentials } from './config.ts'
 import { db } from './db/index.ts'
-import { countUndatedConversions, latestScoreRun, topScores } from './db/repo.ts'
+import {
+  countUndatedConversions,
+  findLinkById,
+  latestScoreRun,
+  linksMissingClicks,
+  setLinkClicks,
+  topScores,
+  upsertLink,
+} from './db/repo.ts'
 import { ingest } from './jobs/ingest.ts'
 import { rank } from './jobs/rank.ts'
 import { importConversions } from './jobs/import-conversions.ts'
+import { importClicks } from './jobs/import-clicks.ts'
 import { epcReport, DIMENSIONS } from './report/epc.ts'
 import type { Dimension } from './report/epc.ts'
 import { compose, publish } from './publish/telegram.ts'
@@ -99,8 +108,65 @@ async function main(): Promise<void> {
         variant: variantFlag(),
         at: new Date(),
       })
-      console.log(composed.url === '' ? '(sản phẩm không có URL)' : composed.url)
+      if (composed.url === '') {
+        console.log('(sản phẩm không có URL)')
+        break
+      }
+
+      // Lưu lại link ngay cả khi đăng tay: không có dòng trong bảng `link` thì
+      // sau này không có chỗ nào để gắn số click vào, và EPC mất luôn bài đó.
+      const linkId = upsertLink(row.itemId, composed.url, composed.subIds, new Date().toISOString())
+
+      console.log(composed.url)
       console.log(`subId: ${Object.values(composed.subIds).join(' | ')}`)
+      console.log(`link id: ${linkId}   → nhập click: npm run clicks:set -- --link=${linkId} --clicks=<N>`)
+      break
+    }
+
+    case 'clicks:set': {
+      const linkId = intFlag('link', 0)
+      const clicks = intFlag('clicks', -1)
+      if (linkId <= 0) throw new Error('Cần --link=<id>. Xem danh sách: npm run clicks:pending')
+      if (clicks < 0) throw new Error('Cần --clicks=<số>')
+
+      if (!setLinkClicks(linkId, clicks)) throw new Error(`Không có link id ${linkId}`)
+
+      const link = findLinkById(linkId)
+      console.log(`✓ link ${linkId} — ${clicks} click`)
+      if (link) console.log(`  ${truncate(link.name, 50)}  [${link.sub1}|${link.sub2}|${link.sub4}]`)
+      break
+    }
+
+    case 'clicks:import': {
+      const file = flag('file')
+      if (file === '') throw new Error('Cần --file=<đường dẫn csv>')
+
+      const r = importClicks(file)
+      console.log(`Đọc ${r.rows} dòng, khớp ${r.matched} link, tổng ${vnd.format(r.totalClicks)} click.`)
+      if (r.unmatched > 0) {
+        console.log(`⚠ ${r.unmatched} dòng không khớp được với link nào đã lưu:`)
+        for (const s of r.unmatchedSamples) console.log(`    ${s}`)
+        console.log('  Thường là link sinh ngoài hệ thống, hoặc subId đã đổi sau khi đăng.')
+      }
+      break
+    }
+
+    case 'clicks:pending': {
+      const pending = linksMissingClicks(intFlag('limit', 20))
+      if (pending.length === 0) {
+        console.log('Mọi link đều đã có số click.')
+        break
+      }
+      console.log(`${pending.length} link chưa có số click:\n`)
+      console.log(pad('id', 6) + pad('subId', 34) + 'Sản phẩm')
+      for (const l of pending) {
+        console.log(
+          pad(String(l.id), 6) +
+            pad(`${l.sub1}|${l.sub2}|${l.sub3}|${l.sub4}|${l.sub5}`, 34) +
+            truncate(l.name, 40),
+        )
+      }
+      console.log('\nnpm run clicks:set -- --link=<id> --clicks=<N>')
       break
     }
 
@@ -207,7 +273,9 @@ async function main(): Promise<void> {
       console.log(
         '\n"Đã đối soát" là tiền chắc chắn. "Còn treo" gồm cả đơn chưa đối soát nên chỉ là trần trên.',
       )
-      console.log('EPC tính trên cột đã đối soát; cần số click trong bảng post mới hiện được.')
+      console.log(
+        'EPC tính trên cột đã đối soát. Nhóm hiện "—" là chưa nhập click: npm run clicks:pending',
+      )
       break
     }
 
@@ -297,8 +365,12 @@ function printHelp(): void {
   db:init                                        tạo/nâng cấp schema
   ingest  --source=csv|api [--file=] [--limit=]  thu thập offer vào DB
   rank    [--limit=20] [--json]                  chấm điểm và xếp hạng
-  link    --item=<id> [--channel=] [--type=]     sinh link kèm subId
+  link    --item=<id> [--channel=] [--type=]     sinh link kèm subId, lưu lại
   publish [--dry-run] [--limit=3]                đăng lên Telegram
+
+  clicks:pending [--limit=20]                    link chưa có số click
+  clicks:set --link=<id> --clicks=<N>            nhập click cho một link
+  clicks:import --file=<csv>                     nạp click hàng loạt từ dashboard
 
   conversions:import --file=<csv> [--from=] [--to=] [--default-source=link|video]
                                                  nạp đơn từ CSV dashboard

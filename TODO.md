@@ -25,6 +25,28 @@ tiếp thị, tức là không ra tiền**.
 Đây không phải lỗi mới sinh ra. Nó nằm im được suốt M1–M4 vì chưa ai đăng thật. Nhưng
 cả ba hướng mới đều là đăng thật, nên nó thành thứ chặn đầu tiên.
 
+### Và một nghịch lý phải nhìn thẳng
+
+Cả hệ thống này được xây quanh subId: 5 ô tham số là cách duy nhất nó biết kênh nào,
+bài nào, khung giờ nào ra tiền. Toàn bộ giá trị của engine nằm ở chỗ đo được.
+
+**Đơn từ Shopee Video đi qua giỏ hàng trong ứng dụng và KHÔNG mang subId.** Schema đã
+lường trước điều này — cột `conversion.source` tách `link` và `video` chính vì thế —
+nhưng hệ quả thì không tránh được: với làn video, bạn **không so được video A với video
+B bằng EPC**. Chỉ thấy được tổng đơn của cả làn.
+
+Nghĩa là kênh vừa được chọn làm hướng chính lại đúng là kênh mà hệ thống đo yếu nhất.
+
+Không phải lý do để bỏ video — video có thứ mà link không có: Shopee tự phân phối nội
+dung, không cần mình có sẵn khán giả. Nhưng nó đổi cách làm:
+
+- Đo theo **thời gian** thay vì theo subId: đăng một sản phẩm, xem tổng đơn làn video
+  nhích lên bao nhiêu trong 7 ngày sau đó.
+- Vì thế **đừng đẩy nhiều sản phẩm cùng lúc trong giai đoạn đầu** — chồng lên nhau thì
+  không quy được đơn về video nào.
+- Làn link (Facebook, cộng tác viên) là nơi duy nhất còn đo được chi tiết. Giữ nó chạy
+  song song, không phải để tăng sản lượng mà để **còn một mặt phẳng so sánh**.
+
 ---
 
 ## Nhóm 1 — Mất giá trị nếu trì hoãn. Làm tuần này.

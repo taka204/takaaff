@@ -174,12 +174,26 @@ hoạt động.
 
 ### 3. Dashboard
 
+Đang chạy tại **https://takaaff.vercel.app**.
+
 ```bash
-npx vercel deploy --prod
+npx vercel link --yes --project takaaff   # tên dự án phải viết thường
+npx vercel deploy --prod --yes
 ```
 
-Đặt `DATABASE_URL` và `DASHBOARD_TOKEN` trong environment variables của Vercel,
-rồi mở `https://<dự-án>.vercel.app/?token=<DASHBOARD_TOKEN>`.
+Đặt `DATABASE_URL` (dùng chuỗi **pooled** của Neon — serverless mở nhiều kết nối
+ngắn, đúng thứ pgbouncer sinh ra để chịu) và `DASHBOARD_TOKEN` trong environment
+variables của Vercel, rồi mở `https://takaaff.vercel.app/?token=<DASHBOARD_TOKEN>`.
+
+**Hàm serverless được tự bundle, không để Vercel tự biên dịch.** Nguồn nằm ở
+`src/api/`; `npm run build` gộp chúng bằng esbuild ra `api/*.js` (thư mục này
+sinh ra lúc build, đã gitignore). Lý do: Vercel biên dịch từng file `.ts` riêng
+lẻ chứ không bundle, nên nó giữ nguyên chuỗi import `'./_auth.ts'` rồi không
+resolve được lúc chạy. Tự bundle giữ được quy ước import đuôi `.ts` của cả repo.
+
+Vercel gọi hàm theo chữ ký `(req, res)` của `node:http`, nơi `req.url` chỉ là
+đường dẫn. `src/api/_node.ts` bọc handler chuẩn Web thành chữ ký đó, để phần lõi
+giữ `Request`/`Response` và test được mà không cần dựng server giả.
 
 Dashboard **chỉ đọc**. Mọi thay đổi dữ liệu đi qua CLI, nơi có test bảo vệ — một
 endpoint ghi trên internet là bề mặt tấn công không cần thiết cho thứ mà chỉ một

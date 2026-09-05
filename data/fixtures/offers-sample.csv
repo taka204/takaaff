@@ -1,0 +1,16 @@
+item_id,shop_id,name,category_path,url,price,original_price,base_commission_rate,xtra_commission_rate,sales_count,rating,in_stock
+100001,9001,Serum dưỡng ẩm HA cấp nước 30ml,Sắc đẹp/Chăm sóc da mặt,https://shopee.vn/product/9001/100001,189000,320000,2.5%,18%,4820,4.8,1
+100002,9001,Kem chống nắng nâng tông SPF50+,Sắc đẹp/Chăm sóc da mặt,https://shopee.vn/product/9001/100002,245000,390000,2.5%,15%,2140,4.7,1
+100003,9002,Máy hút bụi cầm tay mini không dây,Nhà cửa/Thiết bị gia dụng,https://shopee.vn/product/9002/100003,459000,890000,3%,12%,1875,4.6,1
+100004,9002,Nồi chiên không dầu 5L cảm ứng,Nhà cửa/Thiết bị gia dụng,https://shopee.vn/product/9002/100004,1290000,2100000,3%,10%,940,4.5,1
+100005,9003,Bình giữ nhiệt inox 500ml,Nhà cửa/Đồ dùng nhà bếp,https://shopee.vn/product/9003/100005,129000,199000,3.68%,0,7310,4.4,1
+100006,9004,Điện thoại Galaxy A16 128GB,Điện thoại/Điện thoại,https://shopee.vn/product/9004/100006,4290000,4990000,1.58%,0,412,4.9,1
+100007,9005,Bỉm tã dán size M 64 miếng,Mẹ và bé/Tã bỉm,https://shopee.vn/product/9005/100007,289000,349000,2.8%,14%,5630,4.8,1
+100008,9005,Sữa tắm gội cho bé 500ml,Mẹ và bé/Chăm sóc bé,https://shopee.vn/product/9005/100008,165000,240000,2.8%,9%,3120,4.7,1
+100009,9006,Tai nghe bluetooth chống ồn,Thiết bị điện tử/Phụ kiện,https://shopee.vn/product/9006/100009,349000,690000,2.2%,16%,2890,4.3,1
+100010,9007,Áo thun cotton form rộng unisex,Thời trang nữ/Áo,https://shopee.vn/product/9007/100010,99000,180000,3.5%,20%,12400,4.6,1
+100011,9008,Viên uống collagen trắng da đặc trị nám,Sắc đẹp/Thực phẩm chức năng,https://shopee.vn/product/9008/100011,459000,890000,3%,25%,1200,4.5,1
+100012,9009,Máy đo huyết áp bắp tay tự động,Sức khỏe/Thiết bị y tế,https://shopee.vn/product/9009/100012,690000,1200000,3%,18%,860,4.7,1
+100013,9010,Bàn chải điện sạc USB,Chăm sóc cá nhân/Răng miệng,https://shopee.vn/product/9010/100013,215000,420000,2.6%,13%,1640,4.2,1
+100014,9010,Dép quai ngang chống trượt,Thời trang nam/Giày dép,https://shopee.vn/product/9010/100014,75000,120000,3.5%,0,890,3.8,1
+100015,9011,Balo laptop chống nước 15.6 inch,Phụ kiện thời trang/Túi ví,https://shopee.vn/product/9011/100015,269000,450000,3.2%,11%,3480,4.6,1

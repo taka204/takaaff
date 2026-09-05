@@ -1,0 +1,14 @@
+node_modules/
+.env
+
+# Nội dung agent skill tải về từ skills-lock.json — quan hệ giống node_modules
+# với package-lock.json: lockfile được commit, nội dung thì không.
+# Hai thư mục này là bản sao giống hệt nhau của cùng một bộ skill.
+.agents/skills/
+.claude/skills/
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+data/exports/
+*.log

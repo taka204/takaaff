@@ -1,0 +1,554 @@
+<title>TakaAff Deal Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F6F8F7; --surface:#FFFFFF; --surface-2:#EDF2F0;
+  --ink:#141C1A; --ink-2:#33423E; --muted:#5B6B66; --border:#DCE4E1; --border-2:#C6D2CE;
+  --accent:#1B6B5A; --accent-ink:#0E4438; --accent-wash:#E4F0EC;
+  --warn:#8F5410; --warn-wash:#F7EEDF;
+  --crit:#9C3220; --crit-wash:#F8E9E5;
+  --shadow:0 1px 2px rgba(20,28,26,.05), 0 8px 24px -18px rgba(20,28,26,.35);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1413; --surface:#161E1C; --surface-2:#1D2624;
+    --ink:#E4ECE9; --ink-2:#C3D0CC; --muted:#8FA29D; --border:#26312E; --border-2:#33403C;
+    --accent:#52BFA2; --accent-ink:#8FDCC6; --accent-wash:#14302A;
+    --warn:#D9A054; --warn-wash:#2E2416;
+    --crit:#E08872; --crit-wash:#331D18;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1413; --surface:#161E1C; --surface-2:#1D2624;
+  --ink:#E4ECE9; --ink-2:#C3D0CC; --muted:#8FA29D; --border:#26312E; --border-2:#33403C;
+  --accent:#52BFA2; --accent-ink:#8FDCC6; --accent-wash:#14302A;
+  --warn:#D9A054; --warn-wash:#2E2416;
+  --crit:#E08872; --crit-wash:#331D18;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:"Source Serif 4","Iowan Old Style",Georgia,serif;
+  font-size:17px; line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:860px; margin:0 auto; padding:0 24px}
+h1,h2,h3,h4{font-family:Archivo,"Helvetica Neue",Arial,sans-serif; text-wrap:balance; margin:0}
+.mono,code,th,.lbl,.num{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+
+header.mast{
+  border-bottom:1px solid var(--border);
+  background:var(--surface);
+  padding:64px 0 40px;
+}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--accent); margin-bottom:18px;
+}
+h1{font-size:clamp(38px,6.4vw,60px); line-height:1.02; font-weight:700; letter-spacing:-.028em}
+.dek{
+  font-size:20px; line-height:1.5; color:var(--ink-2); margin-top:20px; max-width:60ch;
+}
+.meta{
+  display:flex; flex-wrap:wrap; gap:0; margin:36px 0 0;
+  border-top:1px solid var(--border);
+}
+.meta div{
+  flex:1 1 150px; padding:16px 20px 14px 0; border-right:1px solid var(--border);
+}
+.meta div:last-child{border-right:0}
+.meta dt{
+  font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:5px;
+}
+.meta dd{margin:0; font-family:Archivo,sans-serif; font-weight:600; font-size:15px; color:var(--ink)}
+
+section{padding:56px 0; border-bottom:1px solid var(--border)}
+.snum{
+  font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.14em;
+  color:var(--muted); display:block; margin-bottom:10px;
+}
+h2{font-size:clamp(25px,3.4vw,33px); font-weight:700; letter-spacing:-.02em; line-height:1.14}
+h3{
+  font-size:18px; font-weight:600; letter-spacing:-.008em;
+  margin:34px 0 10px; color:var(--ink);
+}
+p{margin:14px 0; max-width:66ch}
+.lead{font-size:18.5px; color:var(--ink-2); max-width:64ch}
+ul,ol{max-width:66ch; padding-left:22px; margin:14px 0}
+li{margin:7px 0}
+strong{font-weight:600; color:var(--ink)}
+a{color:var(--accent); text-decoration:underline; text-underline-offset:2px; text-decoration-thickness:1px}
+a:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:2px}
+code{
+  font-size:.87em; background:var(--surface-2); padding:1.5px 5px;
+  border-radius:3px; border:1px solid var(--border); color:var(--ink-2);
+}
+
+.tscroll{overflow-x:auto; margin:22px 0; border:1px solid var(--border); background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; min-width:520px; font-size:14.5px}
+th{
+  font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; font-weight:600;
+  text-align:left; color:var(--muted); padding:12px 16px;
+  border-bottom:1px solid var(--border-2); background:var(--surface-2); white-space:nowrap;
+}
+td{padding:12px 16px; border-bottom:1px solid var(--border); vertical-align:top; line-height:1.45}
+tbody tr:last-child td{border-bottom:0}
+td.num,th.num{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap}
+td:first-child{font-weight:600; font-family:Archivo,sans-serif; font-size:14px}
+
+.note{
+  background:var(--accent-wash); border:1px solid var(--border);
+  border-left:3px solid var(--accent);
+  padding:18px 22px; margin:24px 0; max-width:70ch;
+}
+.note.warn{background:var(--warn-wash); border-left-color:var(--warn)}
+.note.crit{background:var(--crit-wash); border-left-color:var(--crit)}
+.note p{margin:8px 0}
+.note p:first-of-type{margin-top:0}
+.note p:last-of-type{margin-bottom:0}
+.note .lbl{
+  display:block; font-size:10.5px; letter-spacing:.13em; text-transform:uppercase;
+  font-weight:600; margin-bottom:8px; color:var(--accent-ink);
+}
+.note.warn .lbl{color:var(--warn)}
+.note.crit .lbl{color:var(--crit)}
+
+.spine{margin-top:34px; border-left:2px solid var(--border-2)}
+.phase{position:relative; padding:0 0 40px 30px}
+.phase:last-child{padding-bottom:4px}
+.phase::before{
+  content:""; position:absolute; left:-7px; top:7px; width:12px; height:12px;
+  background:var(--accent); border:3px solid var(--ground); border-radius:50%;
+}
+.phase-hd{display:flex; flex-wrap:wrap; align-items:baseline; gap:12px}
+.phase-hd .tag{
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--accent); font-weight:600;
+}
+.phase-hd h3{margin:0; font-size:20px}
+.phase .goal{
+  font-size:14.5px; color:var(--muted); margin:6px 0 0; font-style:italic;
+}
+.exit{
+  margin-top:16px; padding:12px 16px; background:var(--surface);
+  border:1px solid var(--border); font-size:14px; line-height:1.5;
+}
+.exit .lbl{
+  font-size:10px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--muted); font-weight:600; display:block; margin-bottom:4px;
+}
+
+.stack{display:flex; flex-direction:column; gap:8px; margin:26px 0; max-width:70ch}
+.layer{
+  display:grid; grid-template-columns:minmax(0,150px) 1fr; gap:18px;
+  background:var(--surface); border:1px solid var(--border);
+  border-left:3px solid var(--accent); padding:14px 18px; box-shadow:var(--shadow);
+}
+.layer .lname{font-family:Archivo,sans-serif; font-weight:600; font-size:14.5px}
+.layer .lname span{
+  display:block; font-family:"IBM Plex Mono",monospace; font-weight:400;
+  font-size:11px; color:var(--muted); margin-top:3px; letter-spacing:.02em; line-height:1.5;
+}
+.layer .ldesc{font-size:14.5px; color:var(--ink-2); line-height:1.5}
+@media (max-width:620px){.layer{grid-template-columns:1fr; gap:6px}}
+
+.kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); margin:24px 0}
+.kpi{background:var(--surface); padding:18px 20px}
+.kpi .k{
+  font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted); display:block; margin-bottom:8px;
+}
+.kpi .v{font-family:Archivo,sans-serif; font-weight:700; font-size:26px; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+.kpi .d{font-size:13px; color:var(--muted); margin:5px 0 0; line-height:1.4; max-width:none}
+
+footer{padding:44px 0 72px; font-size:14px; color:var(--muted)}
+footer h3{font-size:13px; letter-spacing:.1em; text-transform:uppercase; font-family:"IBM Plex Mono",monospace; font-weight:600; color:var(--muted); margin:0 0 12px}
+footer ul{padding-left:18px; max-width:none}
+footer li{margin:5px 0; font-size:13.5px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+
+<header class="mast">
+  <div class="wrap">
+    <div class="eyebrow">Kế hoạch triển khai &middot; 90 ngày</div>
+    <h1>TakaAff Deal&nbsp;Engine</h1>
+    <p class="dek">Hệ thống tự động phát hiện sản phẩm Shopee có <strong>Hoa hồng XTRA</strong> đáng tiền, tạo link tracking phân tầng, phân phối song song qua kênh riêng và Shopee Video, rồi học ngược từ báo cáo chuyển đổi.</p>
+    <dl class="meta">
+      <div><dt>Mô hình</dt><dd>Deal engine tự động</dd></div>
+      <div><dt>Nguồn lực</dt><dd>1&ndash;2h/ngày &middot; 2&ndash;10tr</dd></div>
+      <div><dt>Xuất phát</dt><dd>Đã có tài khoản affiliate</dd></div>
+      <div><dt>Kênh</dt><dd>Telegram + Shopee Video</dd></div>
+      <div><dt>Mục tiêu D90</dt><dd>3&ndash;4tr/tháng</dd></div>
+    </dl>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <span class="snum">01 &mdash; NỀN TẢNG</span>
+    <h2>Chương trình thực sự vận hành thế nào</h2>
+    <p class="lead">Phần lớn nội dung hướng dẫn trên mạng đang trộn lẫn hai loại hoa hồng khác nhau về bản chất. Hiểu sai chỗ này là xây sai toàn bộ hệ thống.</p>
+
+    <div class="tscroll">
+      <table>
+        <thead><tr><th>Quy tắc</th><th>Nội dung</th><th>Hệ quả cho TakaAff</th></tr></thead>
+        <tbody>
+          <tr><td>Hoa hồng cơ bản</td><td>~1,58&ndash;3,68% đơn trực tiếp; 1,28&ndash;2,55% đơn gián tiếp (áp dụng từ 03/2025)</td><td>Không đủ sống. Không phải nguồn thu chính.</td></tr>
+          <tr><td>Hoa hồng XTRA</td><td>Người bán tự bỏ tiền, cộng dồn lên mức cơ bản, có thể tới ~35%. Theo shop hoặc theo sản phẩm, có hạn thời gian.</td><td><strong>Đây là toàn bộ lợi thế.</strong> Engine tồn tại để săn đúng nhóm này.</td></tr>
+          <tr><td>Ghi nhận</td><td>Last click, cửa sổ <strong>7 ngày</strong> sau khi bấm link</td><td>Post đúng giờ mua sắm quan trọng hơn post nhiều.</td></tr>
+          <tr><td>Cơ sở tính</td><td>Giá sau giảm giá, không gồm phí ship</td><td>Ước tính hoa hồng phải dùng giá thực trả, không dùng giá gốc.</td></tr>
+          <tr><td>Loại link</td><td>Link trang chủ và trang danh mục <strong>không</strong> được tính XTRA</td><td>Chỉ sinh link cấp sản phẩm hoặc cấp shop.</td></tr>
+          <tr><td>Đơn không tính</td><td>Hủy, hoàn, từ chối nhận, đơn gian lận</td><td>KPI phải đo đơn <em>hợp lệ sau đối soát</em>, không đo đơn đặt.</td></tr>
+          <tr><td>Thanh toán</td><td>Đối soát khoảng T+30, chi trả theo chu kỳ tháng</td><td>Dòng tiền trễ 1&ndash;2 tháng. Ngân sách phải chịu được độ trễ này.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <span class="lbl">Điểm xoay của cả kế hoạch</span>
+      <p>Một đơn 300.000đ ngành điện tử ăn hoa hồng cơ bản 2% = <strong class="mono">6.000đ</strong>. Cũng đơn đó nếu là sản phẩm đang chạy XTRA 20% = <strong class="mono">60.000đ</strong>. Chênh lệch 10 lần đến từ <em>việc chọn sản phẩm</em>, không đến từ việc chăm chỉ gắn link.</p>
+      <p>Nghĩa là giá trị của TakaAff không nằm ở khả năng đăng bài, mà nằm ở khả năng <strong>biết sản phẩm nào đang có XTRA cao, trong khung giờ nào, trước khi hết hạn</strong>. Đó là bài toán dữ liệu, và đó là lý do hướng engine hợp với bạn.</p>
+    </div>
+
+    <h3>Bốn điều bắt buộc phải tự xác minh trong tuần đầu</h3>
+    <p>Các nguồn công khai mâu thuẫn nhau ở những điểm dưới đây. Bạn đã có tài khoản affiliate nên xác minh được trực tiếp &mdash; làm việc này <strong>trước</strong> khi viết dòng code nào, vì cả bốn đều đổi công thức tính điểm hoặc đổi chiến lược kênh.</p>
+    <ol>
+      <li><strong>Trần hoa hồng mỗi đơn.</strong> Các nguồn ghi 30.000đ / 50.000đ / 70.000đ. Nếu trần thấp, chiến lược phải là <em>nhiều đơn giá trung bình</em>, tuyệt đối không săn đơn giá trị cao.</li>
+      <li><strong>Ngưỡng thanh toán tối thiểu</strong> và lịch chi trả thực tế trên dashboard của bạn.</li>
+      <li><strong>Mức hoa hồng cơ bản hiện hành theo từng ngành hàng</strong> &mdash; bảng trong dashboard là nguồn đúng duy nhất, không phải bài blog.</li>
+      <li><strong>Quy tắc nhãn AI trên Shopee Video tại Việt Nam.</strong> Ở Philippines và Malaysia, gắn nhãn AI làm tắt hoa hồng cơ bản nhưng giữ nguyên hoa hồng AMS. Cần xác nhận Việt Nam áp dụng giống hay khác &mdash; toàn bộ mục 04 xoay quanh câu trả lời này.</li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="snum">02 &mdash; KINH TẾ ĐƠN VỊ</span>
+    <h2>Tính ngược từ mục tiêu tiền</h2>
+    <p class="lead">Trước khi build, cần biết cần bao nhiêu người xem để ra bao nhiêu tiền. Nếu con số vô lý thì phải đổi mô hình chứ không phải cố gắng hơn.</p>
+
+    <div class="tscroll">
+      <table>
+        <thead><tr><th>Bước tính</th><th class="num">Giả định</th><th>Ghi chú</th></tr></thead>
+        <tbody>
+          <tr><td>Giá trị đơn trung bình</td><td class="num">250.000đ</td><td>Vùng giá quyết định mua nhanh, ít hoàn</td></tr>
+          <tr><td>Tỉ lệ đơn là hàng XTRA</td><td class="num">40%</td><td>Phần còn lại chỉ ăn hoa hồng cơ bản</td></tr>
+          <tr><td>Hoa hồng hỗn hợp</td><td class="num">~6,3%</td><td>40%&times;12% + 60%&times;2,5%</td></tr>
+          <tr><td>Hoa hồng mỗi đơn</td><td class="num">~15.750đ</td><td>Có thể bị chặn bởi trần mỗi đơn</td></tr>
+          <tr><td>Trừ 10% thuế khấu trừ</td><td class="num">~14.200đ</td><td>Áp dụng khi mỗi lần chi từ 2 triệu</td></tr>
+          <tr><td>Trừ 12% đơn hủy / hoàn</td><td class="num">~12.500đ</td><td>Con số thực nhận trên mỗi đơn đặt</td></tr>
+          <tr><td>Để đạt 4.000.000đ/tháng</td><td class="num">~320 đơn</td><td>Khoảng 11 đơn hợp lệ mỗi ngày</td></tr>
+          <tr><td>Với CVR click&rarr;đơn 1,5%</td><td class="num">~730 click/ngày</td><td>Mức hợp lý cho kênh deal, ý định mua cao</td></tr>
+          <tr><td>Với 6 bài/ngày, CTR 4%</td><td class="num">~3.000 thành viên</td><td>Thành viên <em>hoạt động</em>, không phải tổng</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note warn">
+      <span class="lbl">Đọc thẳng con số này</span>
+      <p>Mốc thu nhập nghiêm túc nằm ở khoảng <strong>3.000 thành viên hoạt động</strong>. Với 1&ndash;2h/ngày và xuất phát từ con số 0, đó là mục tiêu của <strong>tháng thứ 5&ndash;6</strong>, không phải tháng đầu. Bất kỳ kế hoạch nào hứa 10tr trong 30 ngày đều đang bán khoá học.</p>
+      <p>Vì vậy 90 ngày đầu có một mục tiêu duy nhất, và nó không phải là tiền: <strong>chứng minh vòng lặp dữ liệu chạy được</strong> &mdash; engine chọn sản phẩm, bài đăng ra click, click ra đơn, đơn quay lại dạy engine chọn tốt hơn. Vòng lặp đó chạy được thì tăng quy mô chỉ còn là chuyện thời gian và kênh.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="snum">03 &mdash; KIẾN TRÚC</span>
+    <h2>TakaAff gồm năm lớp</h2>
+    <p class="lead">Shopee VN có Open API affiliate thật: <code>open-api.affiliate.shopee.vn/graphql</code>, ký request bằng <code>SHA256(AppId + Timestamp + Payload + Secret)</code>. Nó hỗ trợ đúng những gì hệ thống này cần.</p>
+
+    <div class="stack">
+      <div class="layer">
+        <div class="lname">Thu thập<span>productOfferV2<br>shopOfferV2</span></div>
+        <div class="ldesc">Quét sản phẩm và shop theo từ khoá, ngành hàng, danh sách nổi bật. Lưu <strong>snapshot theo giờ</strong> chứ không chỉ trạng thái hiện tại &mdash; biến động hoa hồng và giá theo thời gian mới là tín hiệu, ảnh chụp tĩnh thì không.</div>
+      </div>
+      <div class="layer">
+        <div class="lname">Chấm điểm<span>scoring</span></div>
+        <div class="ldesc">Xếp hạng theo giá trị kỳ vọng mỗi click: <code>min(giá &times; hoa hồng thực, trần) &times; xác suất chốt</code>. Xác suất chốt ban đầu ước lượng bằng heuristic (độ sâu giảm giá, tốc độ bán, đánh giá shop, vùng giá); sau khoảng 500 đơn thì thay bằng mô hình fit trên dữ liệu thật của chính bạn.</div>
+      </div>
+      <div class="layer">
+        <div class="lname">Sinh link<span>generateShortLink</span></div>
+        <div class="ldesc">Mỗi link mang 5 tham số <code>subId</code> theo lược đồ cố định. Đây là thứ biến hệ thống từ &ldquo;công cụ đăng bài&rdquo; thành &ldquo;hệ thống học được&rdquo;.</div>
+      </div>
+      <div class="layer">
+        <div class="lname">Phân phối<span>bot đa kênh<br>+ Shopee Video</span></div>
+        <div class="ldesc">Hai nhánh song song. <strong>Kênh sở hữu:</strong> Telegram trước (không giới hạn link, API sạch, dựng trong một buổi), sau đó Zalo OA và Facebook. <strong>Kênh thuật toán:</strong> Shopee Video &mdash; xem mục 04. Lịch đăng bám hai khung giờ vàng <strong>12:00&ndash;13:00</strong> và <strong>20:00&ndash;22:00</strong>; cửa sổ ghi nhận chỉ 7 ngày nên đăng gần thời điểm mua có giá trị hơn đăng nhiều.</div>
+      </div>
+      <div class="layer">
+        <div class="lname">Vòng phản hồi<span>conversionReport<br>validatedReport</span></div>
+        <div class="ldesc">Kéo báo cáo hằng ngày, khớp ngược <code>subId</code> về đúng bài đăng đã sinh ra đơn, đẩy kết quả trở lại lớp chấm điểm. <strong>Không có lớp này thì bốn lớp trên chỉ là một cái máy spam.</strong></div>
+      </div>
+    </div>
+
+    <h3>Lược đồ subId &mdash; thiết kế một lần, dùng mãi</h3>
+    <p>Đặt sai lược đồ này thì ba tháng sau có dữ liệu mà không phân tích được. Cố định ngay từ bài đăng đầu tiên:</p>
+    <div class="tscroll">
+      <table>
+        <thead><tr><th>Tham số</th><th>Chiều đo</th><th>Ví dụ giá trị</th><th>Trả lời câu hỏi</th></tr></thead>
+        <tbody>
+          <tr><td>subId1</td><td>Kênh</td><td class="mono">tg &middot; zalo &middot; fb &middot; web</td><td>Kênh nào đáng đầu tư tiếp?</td></tr>
+          <tr><td>subId2</td><td>Loại bài</td><td class="mono">flash &middot; restock &middot; review</td><td>Định dạng nào chốt tốt?</td></tr>
+          <tr><td>subId3</td><td>Ngành hàng</td><td class="mono">beauty &middot; home &middot; baby</td><td>Ngách nào nên tập trung?</td></tr>
+          <tr><td>subId4</td><td>Bài đăng</td><td class="mono">260915-20</td><td>Khung giờ nào hiệu quả?</td></tr>
+          <tr><td>subId5</td><td>Biến thể A/B</td><td class="mono">a &middot; b</td><td>Tiêu đề nào thắng?</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Stack đề xuất</h3>
+    <p><strong>Node + TypeScript</strong> &mdash; cùng một ngôn ngữ cho bot (grammY), scheduler và website SEO về sau, điều này quan trọng khi bạn chỉ có 1&ndash;2h/ngày. <strong>Postgres qua Supabase</strong> (bậc miễn phí đủ dùng cả năm đầu) cho bảng snapshot. Cron trên một VPS nhỏ, hoặc Cloudflare Workers nếu muốn chi phí hạ tầng bằng 0.</p>
+    <p>Bắt buộc: đặt một interface <code>OfferSource</code> ngay từ commit đầu tiên, với hai cài đặt <code>ShopeeOpenApiSource</code> và <code>ManualCsvSource</code>. Lý do nằm ở mục rủi ro ngay bên dưới.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="snum">04 &mdash; KÊNH THỨ HAI</span>
+    <h2>Shopee Video: phân phối mà không phải tự xây khán giả</h2>
+    <p class="lead">Mục 02 kết luận nút thắt của cả mô hình là phải nuôi được 3.000 thành viên. Shopee Video tháo đúng nút thắt đó: video được thuật toán đẩy tới người dùng <em>đang ở trong app mua sắm</em>, không cần bạn sở hữu khán giả trước.</p>
+
+    <h3>Cửa vào và cách ăn tiền</h3>
+    <p>Để bật được giỏ hàng gắn sản phẩm trên video, tài khoản cần <strong>tối thiểu 5 video gốc do chính chủ đăng, được Shopee duyệt hợp lệ, trong vòng 30 ngày</strong>, cùng KYC thanh toán đã được duyệt. Một số nguồn còn nêu yêu cầu 2.000 follower trên kênh mạng xã hội đã liên kết, số khác nói không có ngưỡng follower &mdash; đây là điểm thứ tư bạn phải tự xác minh trong dashboard.</p>
+
+    <div class="tscroll">
+      <table>
+        <thead><tr><th>Loại đơn</th><th class="num">Hoa hồng cơ bản</th><th>Định nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td>Đơn trực tiếp</td><td class="num">1,58&ndash;3,68%</td><td>Khách mua đúng sản phẩm ở đúng shop được gắn trong video</td></tr>
+          <tr><td>Đơn gián tiếp</td><td class="num">1,28&ndash;2,55%</td><td>Khách bấm vào video rồi mua ở <em>shop khác</em> trong vòng 7 ngày &mdash; vẫn được tính, mức thấp hơn</td></tr>
+          <tr><td>Trần mỗi đơn</td><td class="num">~30.000đ</td><td>Con số được nêu cho kênh video; nằm trong nhóm ba tham số phải tự xác minh ở mục 01</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Quy tắc quyết định tất cả: nhãn AI</h3>
+    <p>Shopee đã ban hành chính sách riêng cho nội dung do AI tạo trên Shopee Video. Nội dung tạo hoàn toàn bằng AI hoặc <em>bị chỉnh sửa đáng kể</em> bằng AI &mdash; mô phỏng gương mặt, giọng nói người thật, dựng lại bối cảnh &mdash; đều bắt buộc bật nhãn <strong>&ldquo;Video tạo bởi AI&rdquo;</strong>. Và bật nhãn có giá của nó:</p>
+
+    <div class="tscroll">
+      <table>
+        <thead><tr><th>Nguồn hoa hồng</th><th>Không gắn nhãn AI</th><th>Có gắn nhãn AI</th></tr></thead>
+        <tbody>
+          <tr><td>Hoa hồng cơ bản do Shopee trả</td><td>Có &mdash; 1,58&ndash;3,68%</td><td><strong>Bị tắt</strong></td></tr>
+          <tr><td>Hoa hồng AMS do người bán trả</td><td>Có</td><td><strong>Vẫn được trả</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <span class="lbl">Đây là chỗ mọi người đọc sai và bỏ cuộc</span>
+      <p>Nghe &ldquo;gắn nhãn AI là mất hoa hồng&rdquo; thì ai cũng nghĩ hướng này chết. Nhưng <strong>AMS chính là Affiliate Marketing Solution &mdash; khoản hoa hồng do người bán tự bỏ tiền, tức là Hoa hồng XTRA.</strong></p>
+      <p>Ghép với kết luận ở mục 01: phần bị tắt là 1,58&ndash;3,68% &mdash; đúng cái phần mà kế hoạch này ngay từ đầu đã xác định là <em>không đủ sống và không phải nguồn thu chính</em>. Phần được giữ lại là phần chiếm 80&ndash;90% thu nhập thực tế.</p>
+      <p>Nói cách khác: <strong>với một chiến lược chỉ đẩy hàng XTRA, cái giá của nhãn AI gần như bằng không.</strong> Và engine ở mục 03 tồn tại chính là để lọc ra nhóm hàng đó. Hai mảnh này khớp vào nhau.</p>
+    </div>
+
+    <h3>Nhưng quy tắc chất lượng đánh thẳng vào video AI làm ẩu</h3>
+    <p>Lợi thế trên chỉ có giá trị nếu video được phân phối. Shopee đặt điều kiện kỹ thuật và nội dung khá cụ thể cho video được ưu tiên hiển thị:</p>
+    <ul>
+      <li>Tỷ lệ 9:16, tối thiểu <code>540&times;960px</code>, bitrate <code>&ge;516 kbps</code>.</li>
+      <li>Sản phẩm phải xuất hiện <strong>ít nhất 6 giây</strong> và chiếm <strong>trên 20% khung hình</strong>.</li>
+      <li><strong>Ảnh tĩnh tối đa 20% thời lượng.</strong> Cấm quay màn hình.</li>
+      <li>Cấm watermark, logo, phụ đề của nền tảng khác. Bê nguyên video TikTok sang bị xếp vào vi phạm nghiêm trọng.</li>
+      <li>Cấm đăng trùng lặp nội dung bằng công cụ tự động &mdash; đây là điều khoản trực tiếp nhắm vào việc chạy video AI hàng loạt.</li>
+      <li>Shopee <strong>ưu tiên hiển thị video có người hoặc bộ phận cơ thể xuất hiện</strong>.</li>
+    </ul>
+
+    <div class="note warn">
+      <span class="lbl">Phân biệt hai khái niệm bị nhập làm một</span>
+      <p><strong>&ldquo;Không hiện mặt&rdquo; không đồng nghĩa với &ldquo;không hiện người&rdquo;.</strong> Thuật toán ưu tiên video có bộ phận cơ thể &mdash; bàn tay cầm, mở, thao tác với sản phẩm là đủ, không cần lên hình mặt.</p>
+      <p>Nghĩa là dạng video rẻ nhất và cũng phổ biến nhất &mdash; ảnh sản phẩm ghép slideshow, thêm giọng đọc AI &mdash; ăn đủ ba lần phạt cùng lúc: vi phạm giới hạn ảnh tĩnh 20%, thiếu yếu tố người được ưu tiên, và mất hoa hồng cơ bản vì phải gắn nhãn AI. Đó là lý do đa số kênh dạng này chết sau vài tuần.</p>
+    </div>
+
+    <h3>Hai làn, và cây cầu giữa chúng</h3>
+    <div class="stack">
+      <div class="layer">
+        <div class="lname">Làn A<span>AI &middot; gắn nhãn<br>chi phí hàng ~0đ</span></div>
+        <div class="ldesc">Video dựng bằng AI, bật nhãn đầy đủ, <strong>chỉ đẩy sản phẩm có XTRA cao</strong>. Không cần mua hàng, sản lượng lớn, dùng để <em>dò</em> xem sản phẩm và góc tiếp cận nào thực sự ra đơn. Chấp nhận mất hoa hồng cơ bản và chấp nhận reach thấp hơn.</div>
+      </div>
+      <div class="layer">
+        <div class="lname">Làn B<span>quay thật &middot; không nhãn<br>cần mua sản phẩm</span></div>
+        <div class="ldesc">Bàn tay thật thao tác với sản phẩm thật, quay bằng điện thoại, <strong>vẫn không lộ mặt</strong>. Giữ được cả hoa hồng cơ bản lẫn XTRA, thoả điều kiện ưu tiên hiển thị, và không phải gắn nhãn AI. Đổi lại tốn tiền hàng và thời gian quay.</div>
+      </div>
+    </div>
+
+    <p><strong>Cây cầu là thứ đáng giá nhất ở đây.</strong> Chạy Làn A trước với chi phí gần bằng không để tìm ra sản phẩm nào chốt được, rồi <em>chỉ bỏ tiền mua đúng những sản phẩm đã tự chứng minh</em> để quay lại bằng Làn B. Bạn không bao giờ phải đoán nên mua gì về quay &mdash; dữ liệu quyết định thay bạn. Với ngân sách 2&ndash;10tr, đây là cách duy nhất tiêu tiền hàng mà không tiêu mù.</p>
+
+    <div class="note crit">
+      <span class="lbl">Đường không được đi</span>
+      <p>Dùng AI mà <strong>không</strong> gắn nhãn để giữ hoa hồng cơ bản là con đường mất tài khoản, không phải mẹo tối ưu. Shopee phát hiện bằng ba lớp: tự khai báo, hệ thống dò tự động, và người dùng báo cáo. Chế tài leo thang từ điểm phạt, giảm hiển thị, xoá video, tới cấm đăng tạm thời hoặc vĩnh viễn.</p>
+      <p>Ngoài ra từ <strong>01/01/2026, Luật Công nghiệp công nghệ số 71/2025/QH15</strong> đã có hiệu lực, yêu cầu sản phẩm công nghệ số tạo bởi AI phải có dấu hiệu nhận dạng. Gắn nhãn ở đây là nghĩa vụ pháp lý, không chỉ là quy định của sàn.</p>
+    </div>
+
+    <h3>Điểm nối với engine &mdash; và một khoảng trống cần bịt</h3>
+    <p>Lớp chấm điểm ở mục 03 dùng lại được nguyên vẹn: nó đã lọc sẵn hàng XTRA cao, giờ đầu ra chảy thêm vào hàng đợi sản xuất video thay vì chỉ chảy vào hàng đợi đăng bài.</p>
+    <p>Khoảng trống nằm ở đo lường. Đơn từ Shopee Video đến từ sản phẩm gắn trong video qua giỏ hàng in-app, <strong>không đi qua link <code>generateShortLink</code></strong>, nên lược đồ <code>subId</code> không phủ được kênh này. Việc cần làm ở tuần đầu là kiểm tra xem <code>conversionReport</code> có trả về trường <code>campaignType</code> tách riêng đơn từ video hay không; nếu không, phải nhập tay số liệu từ dashboard nhà sáng tạo để EPC giữa hai kênh còn so sánh được với nhau. Không so được thì mục 08 mất tác dụng.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="snum">05 &mdash; LỘ TRÌNH</span>
+    <h2>90 ngày, bốn giai đoạn</h2>
+    <p class="lead">Mỗi giai đoạn có điều kiện thoát rõ ràng. Không đạt điều kiện thoát thì sửa giai đoạn đó, không đi tiếp &mdash; đi tiếp trên nền sai là cách phổ biến nhất để mất ba tháng.</p>
+
+    <div class="spine">
+      <div class="phase">
+        <div class="phase-hd"><span class="tag">Tuần 1</span><h3>Xác minh trước khi xây</h3></div>
+        <p class="goal">Không viết code. Chỉ thu thập sự thật và mở khoá quyền truy cập.</p>
+        <ul>
+          <li>Đăng nhập dashboard, chốt ba con số ở mục 01: trần hoa hồng mỗi đơn, ngưỡng thanh toán, bảng hoa hồng cơ bản theo ngành.</li>
+          <li><strong>Nộp đơn xin quyền Open API</strong> qua <code>affiliate.shopee.vn/open_api</code>. Đây là việc có thời gian chờ dài nhất nên phải làm ngay ngày đầu tiên.</li>
+          <li>Chọn <strong>1&ndash;2 ngành hàng</strong> và bám suốt 90 ngày. Ưu tiên nơi XTRA tập trung và tần suất mua lại cao: làm đẹp, đồ gia dụng nhỏ, mẹ và bé. <strong>Tránh hẳn thực phẩm chức năng và thiết bị y tế</strong> &mdash; lý do ở mục tuân thủ.</li>
+          <li>Sinh thủ công 20 link, đăng thử vào một nhóm bạn bè, quan sát một đơn thật chạy hết vòng đối soát.</li>
+          <li><strong>Xác minh hai điều về Shopee Video:</strong> điều kiện bật giỏ hàng của tài khoản bạn (có yêu cầu 2.000 follower hay không), và quy tắc nhãn AI có tắt hoa hồng cơ bản tại thị trường Việt Nam đúng như ở Philippines và Malaysia hay không. Hỏi thẳng bộ phận hỗ trợ affiliate và lưu lại câu trả lời.</li>
+        </ul>
+        <div class="exit"><span class="lbl">Điều kiện thoát</span>Có số liệu thật của bốn tham số, đã nộp đơn xin API, có câu trả lời bằng văn bản về quy tắc nhãn AI, và đã tận mắt thấy một đơn được ghi nhận đầy đủ.</div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-hd"><span class="tag">Tuần 2&ndash;4</span><h3>Engine tối thiểu</h3></div>
+        <p class="goal">Máy chọn hàng chạy được, phân phối vẫn làm tay.</p>
+        <ul>
+          <li>Dựng lớp thu thập và snapshot theo giờ. Bắt đầu tích luỹ dữ liệu ngay cả khi chưa dùng đến &mdash; dữ liệu lịch sử không thể lấy bù về sau.</li>
+          <li>Cài công thức chấm điểm bản heuristic. Xuất bảng xếp hạng top 20 mỗi ngày.</li>
+          <li>Sinh link kèm đầy đủ <code>subId</code> theo đúng lược đồ.</li>
+          <li>Mở kênh Telegram, đăng tay 4&ndash;6 bài/ngày từ bảng xếp hạng. Đăng tay ở giai đoạn này là cố ý: bạn cần cảm nhận được bài nào hay để sau đó dạy lại cho máy.</li>
+          <li><strong>Song song, đăng 5 video hợp lệ để mở giỏ hàng Shopee Video.</strong> Việc này nằm trên đường găng &mdash; cửa sổ tính là 30 ngày, chậm một tuần là trượt sang giai đoạn sau. Làm bằng Làn B (tay thật, sản phẩm thật, không nhãn AI) cho 5 video đầu vì đây là 5 video Shopee dùng để xét duyệt tài khoản.</li>
+        </ul>
+        <div class="exit"><span class="lbl">Điều kiện thoát</span>Engine chạy tự động hằng ngày không cần can thiệp; ít nhất 30 đơn hợp lệ; <code>conversionReport</code> trả về đúng <code>subId</code> bạn đã gắn; giỏ hàng Shopee Video đã được bật.</div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-hd"><span class="tag">Tuần 5&ndash;8</span><h3>Đóng vòng lặp</h3></div>
+        <p class="goal">Hệ thống bắt đầu tự học. Đây là giai đoạn quan trọng nhất trong cả 90 ngày.</p>
+        <ul>
+          <li>Tự động kéo <code>conversionReport</code> hằng ngày, khớp ngược về bài đăng, tính <strong>EPC theo từng chiều</strong> của lược đồ subId.</li>
+          <li>Nạp EPC thực đo ngược vào công thức chấm điểm, thay cho hệ số phỏng đoán ban đầu.</li>
+          <li>Tự động hoá đăng bài theo lịch hai khung giờ vàng. Chèn <strong>tự động</strong> câu công bố tiếp thị liên kết vào mọi bài.</li>
+          <li>Bắt đầu A/B tiêu đề qua <code>subId5</code>. Mỗi tuần một giả thuyết, không nhiều hơn.</li>
+          <li><strong>Chạy Làn A với sản lượng thật:</strong> 2&ndash;3 video AI có gắn nhãn mỗi ngày, chỉ lấy sản phẩm XTRA cao từ đầu ra của engine. Mục tiêu không phải doanh thu mà là <em>dò</em> &mdash; sản phẩm nào và góc tiếp cận nào chốt được.</li>
+          <li>So sánh EPC giữa Telegram và Shopee Video. Đây là phép so quan trọng nhất của cả giai đoạn: nó quyết định 60 ngày tiếp theo bạn đổ công vào đâu.</li>
+        </ul>
+        <div class="exit"><span class="lbl">Điều kiện thoát</span>EPC tăng ít nhất 30% so với tuần 4; biết chắc ngành hàng nào và loại bài nào cho EPC cao nhất, bằng số liệu chứ không bằng cảm giác; có danh sách 10&ndash;15 sản phẩm đã tự chứng minh là chốt được qua video.</div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-hd"><span class="tag">Tuần 9&ndash;12</span><h3>Đổ nguồn lực vào chỗ đã chứng minh</h3></div>
+        <p class="goal">Chỉ đến bây giờ mới tiêu tiền, vì bây giờ mới biết tiêu vào đâu.</p>
+        <ul>
+          <li>Dồn ngân sách seeding 2&ndash;3tr vào <strong>đúng kênh có EPC cao nhất</strong>, không chia đều.</li>
+          <li><strong>Bắc cầu sang Làn B:</strong> mua đúng 10&ndash;15 sản phẩm đã tự chứng minh ở tuần 5&ndash;8, quay lại bằng tay thật, không gắn nhãn AI. Đây là lần đầu tiên tiền hàng được chi, và nó được chi vào thứ đã có dữ liệu bảo chứng. So EPC của cùng một sản phẩm ở hai làn để biết chính xác nhãn AI đang lấy đi bao nhiêu.</li>
+          <li>Dựng website nội dung trên domain riêng, đăng lại 20&ndash;30 deal tốt nhất đã có dữ liệu chứng minh. Đây là hạt giống SEO cho tháng 6&ndash;12, không kỳ vọng ra đơn ngay.</li>
+          <li>Thêm cảnh báo XTRA sắp hết hạn và cảnh báo giảm giá sâu đột ngột &mdash; hai tín hiệu nhạy cảm thời gian nhất, cũng là nơi engine thắng người làm tay rõ rệt nhất.</li>
+          <li>Rà lại toàn bộ danh mục sản phẩm đang đẩy theo checklist tuân thủ ở mục 06.</li>
+        </ul>
+        <div class="exit"><span class="lbl">Điều kiện thoát</span>1.000&ndash;1.500 thành viên hoạt động; 200&ndash;280 đơn hợp lệ mỗi tháng; hoa hồng 3&ndash;4tr/tháng; đã đo được chi phí để có thêm một thành viên hoạt động.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="snum">06 &mdash; RỦI RO</span>
+    <h2>Những chỗ kế hoạch này có thể gãy</h2>
+
+    <div class="note crit">
+      <span class="lbl">Rủi ro số một</span>
+      <p><strong>Có thể bạn không được cấp quyền Open API.</strong> Cổng này yêu cầu duyệt riêng và trả lỗi <code>10035</code> nếu tài khoản chưa có quyền; đã có ghi nhận Shopee VN hạn chế cấp quyền cho lập trình viên cá nhân.</p>
+      <p>Đường lui phải chuẩn bị trước chứ không đợi bị từ chối: đặt interface <code>OfferSource</code> ngay từ đầu, cài thêm bản đọc từ file xuất thủ công của công cụ tạo link hàng loạt trong dashboard. Engine mất tính tức thời nhưng logic chấm điểm và vòng phản hồi vẫn nguyên vẹn. Phương án dự phòng thứ hai là tham gia một affiliate network có datafeed (Accesstrade, Ecomobi, Rentracks) &mdash; đổi một phần hoa hồng lấy quyền truy cập dữ liệu.</p>
+    </div>
+
+    <div class="tscroll">
+      <table>
+        <thead><tr><th>Rủi ro</th><th>Ảnh hưởng</th><th>Đối sách</th></tr></thead>
+        <tbody>
+          <tr><td>Trần hoa hồng thấp</td><td>Đơn giá trị cao gần như vô nghĩa</td><td>Áp trần vào công thức chấm điểm từ đầu; nhắm vùng giá 150&ndash;400k</td></tr>
+          <tr><td>Bị cướp click cuối</td><td>Mất đơn vào tay kênh khác trong cửa sổ 7 ngày</td><td>Đăng sát giờ mua; ưu tiên hàng quyết định nhanh, giá thấp</td></tr>
+          <tr><td>XTRA hết hạn giữa chừng</td><td>Bài đã đăng nhưng chỉ còn ăn hoa hồng cơ bản</td><td>TTL cache tối đa 6h; kiểm tra lại tỉ lệ ngay trước khi đăng</td></tr>
+          <tr><td>Khoá tài khoản affiliate</td><td>Mất cả hoa hồng chưa đối soát</td><td>Xem mục 06 &mdash; đây là rủi ro mất trắng, không phải rủi ro giảm doanh thu</td></tr>
+          <tr><td>Nền tảng chặn link affiliate</td><td>Facebook và Zalo bóp phân phối</td><td>Redirect qua domain riêng để đo lường và đổi link, vẫn giữ nguyên công bố affiliate, không che giấu bản chất</td></tr>
+          <tr><td>Dòng tiền trễ T+30</td><td>Tiền seeding ra trước, hoa hồng về sau</td><td>Chỉ tiêu ngân sách quảng cáo từ tuần 9, sau khi đã có số liệu EPC</td></tr>
+          <tr><td>Quy tắc nhãn AI ở VN khác PH/MY</td><td>Nếu VN tắt cả hoa hồng AMS thì Làn A mất sạch giá trị</td><td>Xác minh bằng văn bản ngay tuần 1; nếu đúng vậy thì bỏ Làn A, đi thẳng Làn B với ít sản phẩm hơn</td></tr>
+          <tr><td>Video AI bị giảm hiển thị</td><td>Sản xuất nhiều nhưng không ai xem</td><td>Bám đủ quy chuẩn kỹ thuật ở mục 04; nếu reach Làn A quá thấp sau 3 tuần thì cắt, chuyển hết sang Làn B</td></tr>
+          <tr><td>Trùng lặp nội dung hàng loạt</td><td>Điều khoản cấm spam nhắm thẳng vào pipeline tự động</td><td>Mỗi video một kịch bản riêng, không dùng chung khung hình và lời thoại; giới hạn sản lượng ở mức 2&ndash;3 video/ngày</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="snum">07 &mdash; TUÂN THỦ</span>
+    <h2>Ba ràng buộc không được xem là việc phụ</h2>
+
+    <h3>Chính sách chống gian lận của Shopee</h3>
+    <p>Tự mua qua link của mình, tạo đơn ảo, đánh giá ảo, lạm dụng mã giảm giá đều dẫn tới khoá tài khoản. <strong>Quá hai lần vi phạm là khoá vĩnh viễn</strong>, kèm mất hoa hồng chưa đối soát. Với một hệ thống tự động, mối nguy lớn nhất là vô tình tạo ra mẫu hành vi <em>trông giống</em> gian lận: đừng dùng nhiều tài khoản, đừng để khối lượng link tăng vọt đột ngột, và đừng bao giờ để chính bạn hoặc người nhà mua qua link của hệ thống.</p>
+
+    <h3>Luật Quảng cáo 75/2025/QH15, hiệu lực 01/01/2026</h3>
+    <p>Luật lần đầu định danh KOL/KOC là <em>người chuyển tải sản phẩm quảng cáo</em>, kèm hai nghĩa vụ chạm thẳng vào mô hình này: <strong>phải công bố quan hệ tài trợ</strong>, và <strong>chịu trách nhiệm liên đới</strong> nếu sản phẩm không đúng như quảng cáo. Không còn lập luận &ldquo;tôi chỉ chia sẻ trải nghiệm cá nhân&rdquo;.</p>
+    <ul>
+      <li>Chèn tự động vào <em>mọi</em> bài, ở tầng code chứ không dựa vào trí nhớ: <em>&ldquo;Bài viết có chứa link tiếp thị liên kết. Mình có thể nhận hoa hồng khi bạn mua qua link; giá bạn trả không thay đổi.&rdquo;</em></li>
+      <li>Mô tả sản phẩm chỉ dùng thông tin từ trang bán, không tự thêm công dụng.</li>
+      <li>Đưa <strong>thực phẩm chức năng, thuốc, thiết bị y tế và mỹ phẩm hứa hẹn trị liệu</strong> vào danh sách chặn ngay ở tầng thu thập. Trách nhiệm liên đới ở nhóm này là rủi ro pháp lý thật, không đáng đổi lấy vài phần trăm hoa hồng.</li>
+    </ul>
+
+    <h3>Luật Công nghiệp công nghệ số 71/2025/QH15, hiệu lực 01/01/2026</h3>
+    <p>Việt Nam là nước đầu tiên trên thế giới ban hành luật riêng về công nghiệp công nghệ số, với cả một chương dành cho trí tuệ nhân tạo. Quy định liên quan trực tiếp tới Làn A: <strong>sản phẩm công nghệ số tạo bởi AI phải có dấu hiệu nhận dạng</strong> để bảo đảm minh bạch với người dùng.</p>
+    <p>Ghép với chính sách nhãn AI của Shopee, kết luận vận hành rất gọn: nhãn AI là <strong>bắt buộc kép</strong> &mdash; vừa là quy định sàn vừa là nghĩa vụ luật. Vì vậy trong hệ thống, việc bật nhãn phải là <em>mặc định bật</em> cho mọi video ra từ pipeline Làn A, và chỉ tắt thủ công khi video thực sự được quay bằng tay thật. Đảo ngược logic này &mdash; mặc định tắt, nhớ thì bật &mdash; là thiết kế sai, vì nó biến một nghĩa vụ pháp lý thành thứ phụ thuộc vào trí nhớ lúc 11 giờ đêm.</p>
+
+    <h3>Thuế</h3>
+    <p>Shopee khấu trừ <strong>10% tại nguồn</strong> với mỗi lần chi trả từ 2 triệu đồng, theo Thông tư 111/2013/TT-BTC. Shopee <strong>không</strong> quyết toán thay bạn &mdash; cuối năm bạn vẫn phải tự tổng hợp toàn bộ thu nhập và quyết toán theo biểu luỹ tiến. Lưu chứng từ khấu trừ của từng kỳ ngay khi nhận; đây là thứ rất khó đòi lại sau một năm.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="snum">08 &mdash; ĐO LƯỜNG</span>
+    <h2>Chỉ số theo dõi</h2>
+    <p class="lead">Một chỉ số dẫn dắt mọi quyết định; phần còn lại chỉ dùng để chẩn đoán khi chỉ số đó tụt.</p>
+
+    <div class="kpis">
+      <div class="kpi"><span class="k">Chỉ số bắc đẩu</span><span class="v">EPC</span><p class="d">Hoa hồng thực nhận trên mỗi click. Mọi thay đổi engine đều phải trả lời được: EPC có tăng không?</p></div>
+      <div class="kpi"><span class="k">Sức khoẻ engine</span><span class="v">CVR</span><p class="d">Click ra đơn hợp lệ. Tụt nghĩa là chọn sai hàng, không phải viết bài dở.</p></div>
+      <div class="kpi"><span class="k">Sức khoẻ kênh</span><span class="v">CTR</span><p class="d">Bài ra click. Tụt nghĩa là nội dung dở hoặc kênh đã mệt.</p></div>
+      <div class="kpi"><span class="k">Chất lượng chọn hàng</span><span class="v">% hoàn</span><p class="d">Vượt 15% là engine đang đẩy hàng kém. Sửa ở lớp chấm điểm.</p></div>
+      <div class="kpi"><span class="k">Tỉ trọng XTRA</span><span class="v">%</span><p class="d">Phần đơn đến từ hàng XTRA. Dưới 30% nghĩa là engine chưa làm đúng việc của nó.</p></div>
+      <div class="kpi"><span class="k">Chi phí tăng trưởng</span><span class="v">CPA</span><p class="d">Chi phí để có thêm một thành viên hoạt động. Chỉ đo từ tuần 9 trở đi.</p></div>
+    </div>
+
+    <div class="note">
+      <span class="lbl">Nguyên tắc vận hành</span>
+      <p>Mỗi tuần chỉ thử <strong>một</strong> giả thuyết. Với 1&ndash;2h/ngày, chạy nhiều thay đổi song song sẽ khiến bạn không bao giờ biết cái nào có tác dụng &mdash; mà biết cái nào có tác dụng chính là toàn bộ tài sản bạn đang xây trong 90 ngày này.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <h3>Nguồn tham chiếu</h3>
+    <ul>
+      <li><a href="https://help.shopee.vn/portal/10/article/122941">Shopee &mdash; Cách ghi nhận hoa hồng chương trình Shopee Affiliate</a></li>
+      <li><a href="https://affiliate.shopee.vn/open_api">Shopee Affiliate Open API</a> &middot; <a href="https://github.com/bcat95/shopee-aff">tham chiếu endpoint và cách ký request</a></li>
+      <li><a href="https://shopee.vn/affiliate/dieu-kien-hop-tac-chuong-trinh-tiep-thi-lien-ket-cua-shopee-viet-nam/">Điều khoản và điều kiện chương trình tiếp thị liên kết Shopee Việt Nam</a></li>
+      <li><a href="https://banhang.shopee.vn/edu/article/22591">Chính sách chống gian lận đối với hoạt động tiếp thị liên kết</a></li>
+      <li><a href="https://help.shopee.vn/portal/10/article/163104">Shopee &mdash; Thuế thu nhập cá nhân khi tham gia chương trình Affiliate</a></li>
+      <li><a href="https://luatvietnam.vn/linh-vuc-khac/kols-quang-cao-san-pham-can-luu-y-04-quy-dinh-moi-tu-01-01-2026-883-106335-article.html">Luật Quảng cáo 75/2025/QH15 &mdash; nghĩa vụ mới của KOL/KOC từ 01/01/2026</a></li>
+      <li><a href="https://ecomobi.com/vi/shopee-video-affiliate/">Ecomobi &mdash; Shopee Video Affiliate 2026</a></li>
+      <li><a href="https://banhang.shopee.vn/edu/article/27636">Học viện Shopee &mdash; Nội dung AI và nhãn dán AI trên Shopee Video</a></li>
+      <li><a href="https://seller.shopee.ph/edu/article/27551">Shopee PH</a> &middot; <a href="https://seller.shopee.com.my/edu/article/27547">Shopee MY</a> &mdash; Using AI on Shopee Video Guidelines (nguồn của quy tắc tắt hoa hồng khi gắn nhãn AI)</li>
+      <li><a href="https://help.shopee.vn/portal/4/article/138173">Shopee &mdash; Quy định về nội dung video đăng tải trên Shopee Video</a></li>
+      <li><a href="https://help.shopee.vn/portal/10/article/141537">Shopee &mdash; Tham gia Affiliate cùng Shopee Video</a></li>
+      <li><a href="https://seller.shopee.com.my/edu/article/13930">Shopee &mdash; What is Affiliate Marketing Solution (AMS)</a></li>
+      <li><a href="https://thuvienphapluat.vn/phap-luat/toan-van-luat-cong-nghiep-cong-nghe-so-2025-luat-so-712025qh15-tu-112026-luat-cong-nghiep-cong-nghe-225689.html">Luật Công nghiệp công nghệ số 71/2025/QH15, hiệu lực 01/01/2026</a></li>
+    </ul>
+    <p style="margin-top:22px; font-size:13px; max-width:70ch">Các mức hoa hồng và ngưỡng nêu trong tài liệu được tổng hợp từ nguồn công khai và có mâu thuẫn giữa các nguồn. Riêng quy tắc nhãn AI làm tắt hoa hồng cơ bản được xác nhận từ tài liệu chính thức của Shopee Philippines và Malaysia; bản Việt Nam của điều khoản này chưa kiểm chứng được và cần hỏi trực tiếp bộ phận hỗ trợ. Số liệu trong dashboard affiliate của bạn là nguồn đúng duy nhất &mdash; mục 01 liệt kê bốn tham số phải tự xác minh trước khi triển khai.</p>
+  </div>
+</footer>

@@ -1,0 +1,8 @@
+# Giữ LF trong repo và trong thư mục làm việc trên mọi máy. Không có file này,
+# core.autocrlf trên Windows sẽ đổi toàn bộ sang CRLF và tạo ra một diff khổng lồ
+# ở lần chạm tiếp theo.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.db binary

@@ -157,8 +157,9 @@ migration.
 
 ### 2. GitHub Actions
 
-Trong repo, đặt `DATABASE_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` vào
-**Secrets**, và `TAKAAFF_PER_ORDER_CAP_VND` vào **Variables**.
+Trong repo, đặt `DATABASE_URL` vào **Secrets** và `TAKAAFF_PER_ORDER_CAP_VND` vào
+**Variables**. Hai secret `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` chỉ cần khi bật
+lại lịch đăng Telegram — hiện đã tắt, xem mục 2.7 trong `TODO.md`.
 
 `.github/workflows/takaaff.yml` chạy ingest+rank mỗi 2 tiếng, đăng bài trước hai
 khung giờ vàng, và kéo báo cáo đơn mỗi sáng. Lịch đặt sớm hơn giờ mong muốn vì

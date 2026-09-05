@@ -12,8 +12,13 @@ name: TakaAff
 on:
   schedule:
     - cron: '0 */2 * * *'   # ingest snapshot, mỗi 2 tiếng
-    - cron: '45 4 * * *'    # 11:45 VN → đăng trong khung 12:00–13:00
-    - cron: '45 12 * * *'   # 19:45 VN → đăng trong khung 20:00–22:00
+    # Hai lịch đăng Telegram đã TẮT: kênh này bị hoãn ưu tiên, và cron gọi
+    # publish khi chưa có TELEGRAM_BOT_TOKEN chỉ tạo ra một job đỏ mỗi ngày —
+    # nhiễu cảnh báo làm người ta quen với màu đỏ, rồi bỏ qua cái đỏ thật.
+    # Job publish vẫn bấm tay được qua workflow_dispatch. Mở lại bằng cách bỏ
+    # comment hai dòng dưới:
+    # - cron: '45 4 * * *'    # 11:45 VN → đăng trong khung 12:00–13:00
+    # - cron: '45 12 * * *'   # 19:45 VN → đăng trong khung 20:00–22:00
     - cron: '0 1 * * *'     # 08:00 VN → kéo báo cáo đơn
   push:
     paths:
@@ -72,11 +77,10 @@ jobs:
         run: npm run rank -- --limit=20
 
   publish:
+    # Chỉ chạy khi bấm tay, cho tới khi có một kênh đăng tự động được ưu tiên.
     if: >-
-      github.event.schedule == '45 4 * * *' ||
-      github.event.schedule == '45 12 * * *' ||
-      (github.event_name == 'workflow_dispatch' &&
-       (inputs.task == 'publish' || inputs.task == 'all'))
+      github.event_name == 'workflow_dispatch' &&
+      (inputs.task == 'publish' || inputs.task == 'all')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

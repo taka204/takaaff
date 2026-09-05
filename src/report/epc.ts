@@ -23,11 +23,15 @@ export type Dimension = keyof typeof DIMENSIONS
 export type EpcRow = {
   bucket: string
   orders: number
-  commissionVnd: number
+  confirmedOrders: number
+  /** Tiền đã chắc — chỉ đơn hoàn tất đối soát. */
+  confirmedCommissionVnd: number
+  /** Trần trên — gồm cả đơn còn treo. */
+  pendingCommissionVnd: number
   gmvVnd: number
   posts: number
   clicks: number
-  /** null khi chưa có số liệu click. */
+  /** EPC tính trên hoa hồng ĐÃ ĐỐI SOÁT. null khi chưa có số liệu click. */
   epcVnd: number | null
   commissionPerPostVnd: number | null
 }
@@ -47,21 +51,29 @@ export function epcReport(dimension: Dimension, days: number): EpcRow[] {
     const conv = conversions.find((c) => c.bucket === bucket)
     const post = postsByBucket.get(bucket)
 
-    const commissionVnd = conv?.commissionVnd ?? 0
+    // EPC dùng hoa hồng ĐÃ ĐỐI SOÁT, không dùng con số gộp: chỉ số bắc đẩu mà
+    // tính trên tiền chưa chắc có thì mọi quyết định phía sau đều lệch.
+    const confirmed = conv?.confirmedCommissionVnd ?? 0
     const clicks = post?.clicks ?? 0
     const postCount = post?.posts ?? 0
 
     rows.push({
       bucket: bucket === '' ? '(trống)' : bucket,
       orders: conv?.orders ?? 0,
-      commissionVnd,
+      confirmedOrders: conv?.confirmedOrders ?? 0,
+      confirmedCommissionVnd: confirmed,
+      pendingCommissionVnd: conv?.pendingCommissionVnd ?? 0,
       gmvVnd: conv?.gmvVnd ?? 0,
       posts: postCount,
       clicks,
-      epcVnd: clicks > 0 ? commissionVnd / clicks : null,
-      commissionPerPostVnd: postCount > 0 ? commissionVnd / postCount : null,
+      epcVnd: clicks > 0 ? confirmed / clicks : null,
+      commissionPerPostVnd: postCount > 0 ? confirmed / postCount : null,
     })
   }
 
-  return rows.sort((a, b) => b.commissionVnd - a.commissionVnd)
+  return rows.sort(
+    (a, b) =>
+      b.confirmedCommissionVnd - a.confirmedCommissionVnd ||
+      b.pendingCommissionVnd - a.pendingCommissionVnd,
+  )
 }

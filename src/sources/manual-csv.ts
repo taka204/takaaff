@@ -39,7 +39,7 @@ export class ManualCsvSource implements OfferSource {
     if (rows.length === 0) return []
 
     const header = rows[0] as string[]
-    const index = mapHeader(header)
+    const index = mapHeader(header, HEADER_ALIASES)
 
     const missing = ['itemId', 'name', 'priceVnd'].filter((k) => index[k] === undefined)
     if (missing.length > 0) {
@@ -94,7 +94,17 @@ function toNumber(raw: string): number {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
-function mapHeader(header: string[]): Record<string, number> {
+/**
+ * Khớp tên cột thật với tên trường nội bộ.
+ *
+ * Chuẩn hoá về chữ thường không dấu trước khi so, nên "Giá trị đơn hàng",
+ * "gia_tri_don_hang" và "GIA TRI DON HANG" đều khớp cùng một alias. Dùng chung
+ * cho cả CSV sản phẩm lẫn CSV đơn hàng.
+ */
+export function mapHeader(
+  header: string[],
+  aliasTable: Record<string, string[]>,
+): Record<string, number> {
   const normalized = header.map((h) =>
     h
       .trim()
@@ -107,7 +117,7 @@ function mapHeader(header: string[]): Record<string, number> {
   )
 
   const index: Record<string, number> = {}
-  for (const [field, aliases] of Object.entries(HEADER_ALIASES)) {
+  for (const [field, aliases] of Object.entries(aliasTable)) {
     const at = normalized.findIndex((h) => aliases.includes(h))
     if (at !== -1) index[field] = at
   }

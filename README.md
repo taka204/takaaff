@@ -74,10 +74,26 @@ ingest  --source=csv|api [--file=] [--limit=]  thu thập offer vào DB
 rank    [--limit=20] [--json]                  chấm điểm và xếp hạng
 link    --item=<id> [--channel=] [--type=]     sinh link kèm subId
 publish [--dry-run] [--limit=3]                đăng lên Telegram
-sync    [--from=] [--to=]                      kéo conversionReport
+conversions:import --file=<csv> [--from=] [--to=] [--default-source=link|video]
+                                               nạp đơn từ CSV dashboard
+sync    [--from=] [--to=]                      như trên, nhưng lấy qua API
 epc     [--by=channel|type|category|slot|variant|source] [--days=30]
 shopee:ping                                    kiểm tra trạng thái quyền API
 ```
+
+## Vòng phản hồi chạy được mà không cần API
+
+`ConversionSource` áp đúng mẫu của `OfferSource` cho chiều ngược lại: đơn hàng vào hệ
+thống qua interface, nên đọc từ CSV dashboard hay từ `conversionReport` đều cùng một job.
+
+```bash
+npm run conversions:import -- --file=data/exports/don-hang.csv
+npm run epc -- --by=source
+```
+
+Báo cáo tách **"đã đối soát"** khỏi **"còn treo"**. Gộp hai con số là cách âm thầm thổi
+phồng hiệu quả: chu kỳ đối soát khoảng T+30 nên trong tháng đầu gần như mọi đơn đều đang
+treo, và một phần sẽ bị huỷ hoặc hoàn. EPC luôn tính trên cột đã đối soát.
 
 ## Lược đồ subId
 

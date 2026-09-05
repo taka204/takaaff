@@ -305,30 +305,64 @@ export function upsertConversion(c: ConversionInput): void {
 export type ConversionBucket = {
   bucket: string
   orders: number
-  commissionVnd: number
+  /** Chỉ đơn đã hoàn tất đối soát. Đây là tiền thật. */
+  confirmedOrders: number
+  confirmedCommissionVnd: number
+  /** Gồm cả đơn chưa đối soát. Là trần trên, không phải tiền đã chắc. */
+  pendingCommissionVnd: number
   gmvVnd: number
 }
 
+/**
+ * Tách bạch đơn đã đối soát với đơn còn treo.
+ *
+ * Gộp hai loại vào một con số là cách âm thầm thổi phồng hiệu quả: chu kỳ đối
+ * soát khoảng T+30 nên trong tháng đầu gần như mọi đơn đều đang treo, và một
+ * phần trong đó sẽ bị huỷ hoặc hoàn. Quyết định dựa trên con số gộp là quyết
+ * định dựa trên tiền chưa chắc có.
+ *
+ * Nhưng cũng không thể chỉ đếm đơn đã đối soát, vì như vậy suốt 30 ngày đầu báo
+ * cáo sẽ trống trơn. Nên báo cáo hiện cả hai.
+ */
 export function conversionsBy(column: string, since: string): ConversionBucket[] {
   return db()
     .prepare(
       `SELECT ${column} AS bucket,
               COUNT(*) AS orders,
-              SUM(commission_vnd) AS commission,
+              SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS confirmed_orders,
+              SUM(CASE WHEN status = 'completed' THEN commission_vnd ELSE 0 END) AS confirmed_commission,
+              SUM(commission_vnd) AS pending_commission,
               SUM(order_value_vnd) AS gmv
        FROM conversion
        WHERE COALESCE(ordered_at, '') >= ?
-         AND status NOT IN ('cancelled', 'huy')
+         AND status <> 'cancelled'
        GROUP BY bucket
-       ORDER BY commission DESC`,
+       ORDER BY confirmed_commission DESC, pending_commission DESC`,
     )
     .all(since)
     .map((r) => ({
       bucket: String(r['bucket'] ?? ''),
       orders: Number(r['orders']),
-      commissionVnd: Number(r['commission'] ?? 0),
+      confirmedOrders: Number(r['confirmed_orders'] ?? 0),
+      confirmedCommissionVnd: Number(r['confirmed_commission'] ?? 0),
+      pendingCommissionVnd: Number(r['pending_commission'] ?? 0),
       gmvVnd: Number(r['gmv'] ?? 0),
     }))
+}
+
+/**
+ * Đơn không có mốc thời gian sẽ bị mọi báo cáo theo khoảng thời gian bỏ qua —
+ * không xếp được vào cửa sổ nào cả. Đếm riêng để báo cáo còn nói ra được điều
+ * đó thay vì âm thầm giấu doanh thu.
+ */
+export function countUndatedConversions(): number {
+  const row = db()
+    .prepare(
+      `SELECT COUNT(*) AS c FROM conversion
+       WHERE COALESCE(ordered_at, '') = '' AND status <> 'cancelled'`,
+    )
+    .get()
+  return Number(row?.['c'] ?? 0)
 }
 
 export type PostBucket = { bucket: string; posts: number; clicks: number }

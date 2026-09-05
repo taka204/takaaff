@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto'
 import { parseCsv, ManualCsvSource } from '../src/sources/manual-csv.ts'
 import { normalizeRate } from '../src/sources/types.ts'
 import { sign } from '../src/shopee/client.ts'
-import { parseSubIds } from '../src/jobs/sync-conversions.ts'
+import { parseSubIds } from '../src/sources/conversion-api.ts'
 
 describe('parseCsv', () => {
   test('đọc ô có dấu ngoặc kép và dấu phẩy bên trong', () => {

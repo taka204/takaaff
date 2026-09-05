@@ -14,6 +14,7 @@
     "link": "node --disable-warning=ExperimentalWarning src/cli.ts link",
     "publish": "node --disable-warning=ExperimentalWarning src/cli.ts publish",
     "sync": "node --disable-warning=ExperimentalWarning src/cli.ts sync",
+    "conversions:import": "node --disable-warning=ExperimentalWarning src/cli.ts conversions:import",
     "epc": "node --disable-warning=ExperimentalWarning src/cli.ts epc",
     "shopee:ping": "node --disable-warning=ExperimentalWarning src/cli.ts shopee:ping",
     "test": "node --disable-warning=ExperimentalWarning --test \"tests/**/*.test.ts\"",

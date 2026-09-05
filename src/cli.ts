@@ -1,14 +1,14 @@
 import { parseArgs } from 'node:util'
 import { config, hasShopeeCredentials } from './config.ts'
 import { db } from './db/index.ts'
-import { latestScoreRun, topScores } from './db/repo.ts'
+import { countUndatedConversions, latestScoreRun, topScores } from './db/repo.ts'
 import { ingest } from './jobs/ingest.ts'
 import { rank } from './jobs/rank.ts'
-import { syncConversions } from './jobs/sync-conversions.ts'
+import { importConversions } from './jobs/import-conversions.ts'
 import { epcReport, DIMENSIONS } from './report/epc.ts'
 import type { Dimension } from './report/epc.ts'
 import { compose, publish } from './publish/telegram.ts'
-import { createSource } from './sources/index.ts'
+import { createConversionSource, createSource } from './sources/index.ts'
 import type { SourceKind } from './sources/index.ts'
 import { graphql, ShopeeApiError, SHOPEE_ERROR } from './shopee/client.ts'
 import { PRODUCT_OFFER_QUERY } from './shopee/queries.ts'
@@ -134,11 +134,30 @@ async function main(): Promise<void> {
       break
     }
 
-    case 'sync': {
+    case 'sync':
+    case 'conversions:import': {
+      // Cùng một job, khác nguồn. `sync` mặc định dùng API, `conversions:import`
+      // mặc định dùng CSV — nhưng cả hai đều nhận --source nên hoán đổi được.
+      const defaultKind = command === 'sync' ? 'api' : 'csv'
+      const kind = (flag('source', defaultKind) === 'api' ? 'api' : 'csv') as SourceKind
+      const file = flag('file', 'data/fixtures/conversions-sample.csv')
+      const videoDefault = flag('default-source') === 'video' ? 'video' : 'link'
+
+      const source = createConversionSource(kind, file, videoDefault)
       const from = new Date(flag('from', isoDaysAgo(30)))
       const to = new Date(flag('to', new Date().toISOString()))
-      const result = await syncConversions(from, to)
-      console.log(`Lấy về ${result.fetched} đơn, ghi ${result.stored} dòng.`)
+
+      const result = await importConversions(source, { from, to })
+
+      console.log(`[${source.name}] lấy ${result.fetched} bản ghi, ghi ${result.stored} dòng.`)
+      console.log(`  trạng thái: ${describeCounts(result.byStatus)}`)
+      console.log(`  nguồn đơn:  ${describeCounts(result.bySource)}`)
+      console.log(
+        `  hoa hồng đã đối soát:   ${vnd.format(Math.round(result.confirmedCommissionVnd))}đ`,
+      )
+      console.log(
+        `  còn treo (chưa chắc):   ${vnd.format(Math.round(result.pendingCommissionVnd))}đ`,
+      )
       break
     }
 
@@ -150,6 +169,13 @@ async function main(): Promise<void> {
       const days = intFlag('days', 30)
       const rows = epcReport(by as Dimension, days)
 
+      const undated = countUndatedConversions()
+      if (undated > 0) {
+        console.log(
+          `⚠ ${undated} đơn không có mốc thời gian nên không nằm trong bất kỳ cửa sổ báo cáo nào.\n`,
+        )
+      }
+
       if (rows.length === 0) {
         console.log(`Chưa có dữ liệu trong ${days} ngày qua.`)
         break
@@ -158,18 +184,18 @@ async function main(): Promise<void> {
       console.log(`${DIMENSIONS[by as Dimension].label} — ${days} ngày qua\n`)
       console.log(
         pad('Nhóm', 18) +
-          pad('Đơn', 7) +
-          pad('Hoa hồng', 14) +
-          pad('Bài', 6) +
+          pad('Đơn', 10) +
+          pad('Đã đối soát', 14) +
+          pad('Còn treo', 14) +
           pad('Click', 8) +
           'EPC',
       )
       for (const r of rows) {
         console.log(
           pad(r.bucket, 18) +
-            pad(String(r.orders), 7) +
-            pad(`${vnd.format(Math.round(r.commissionVnd))}đ`, 14) +
-            pad(String(r.posts), 6) +
+            pad(`${r.confirmedOrders}/${r.orders}`, 10) +
+            pad(`${vnd.format(Math.round(r.confirmedCommissionVnd))}đ`, 14) +
+            pad(`${vnd.format(Math.round(r.pendingCommissionVnd))}đ`, 14) +
             pad(String(r.clicks), 8) +
             (r.epcVnd === null
               ? r.commissionPerPostVnd === null
@@ -178,6 +204,10 @@ async function main(): Promise<void> {
               : `${vnd.format(Math.round(r.epcVnd))}đ`),
         )
       }
+      console.log(
+        '\n"Đã đối soát" là tiền chắc chắn. "Còn treo" gồm cả đơn chưa đối soát nên chỉ là trần trên.',
+      )
+      console.log('EPC tính trên cột đã đối soát; cần số click trong bảng post mới hiện được.')
       break
     }
 
@@ -226,6 +256,11 @@ function printRanking(rows: Array<Parameters<typeof compose>[0]>): void {
   console.log('\n★ = có Hoa hồng XTRA')
 }
 
+function describeCounts(counts: Record<string, number>): string {
+  const entries = Object.entries(counts)
+  return entries.length === 0 ? '(không có)' : entries.map(([k, v]) => `${k}=${v}`).join(', ')
+}
+
 function pad(s: string, width: number): string {
   return s.length >= width ? `${s.slice(0, width - 1)} ` : s.padEnd(width)
 }
@@ -264,7 +299,11 @@ function printHelp(): void {
   rank    [--limit=20] [--json]                  chấm điểm và xếp hạng
   link    --item=<id> [--channel=] [--type=]     sinh link kèm subId
   publish [--dry-run] [--limit=3]                đăng lên Telegram
-  sync    [--from=] [--to=]                      kéo conversionReport
+
+  conversions:import --file=<csv> [--from=] [--to=] [--default-source=link|video]
+                                                 nạp đơn từ CSV dashboard
+  sync    [--from=] [--to=]                      như trên, nhưng lấy qua API
+
   epc     [--by=channel|type|category|slot|variant|source] [--days=30]
   shopee:ping                                    kiểm tra trạng thái quyền API
 `)

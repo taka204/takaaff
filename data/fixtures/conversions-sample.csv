@@ -1,0 +1,11 @@
+Mã đơn hàng,Mã sản phẩm,Thời gian đặt hàng,Trạng thái,Giá trị đơn hàng,Hoa hồng,Loại chiến dịch,sub_id1,sub_id2,sub_id3,sub_id4,sub_id5
+ORD00001,100001,2026-09-01 12:41:03,Hoàn thành,189.000,34.020,Product Link,tg,flash,sac-dep,260901-12,a
+ORD00002,100002,2026-09-01 20:15:44,Hoàn thành,245.000,30.000,Product Link,tg,flash,sac-dep,260901-20,b
+ORD00003,100010,02/09/2026 12:30,Hoàn thành,99.000,23.265,Product Link,tg,flash,thoi-trang,260902-12,a
+ORD00004,100003,2026-09-02 21:02:11,Đã hủy,459.000,30.000,Product Link,tg,review,nha-cua,260902-21,a
+ORD00005,100007,2026-09-03 12:55:20,Hoàn thành,289.000,30.000,Product Link,zalo,flash,me-va-be,260903-12,a
+ORD00006,100009,2026-09-03 20:44:09,Chờ xác nhận,349.000,30.000,Product Link,zalo,review,dien-tu,260903-20,b
+ORD00007,100001,2026-09-04 13:07:55,Hoàn thành,189.000,34.020,Shopee Video,,,,,
+ORD00008,100015,2026-09-04 21:30:00,Hoàn thành,269.000,30.000,Shopee Video,,,,,
+ORD00009,100002,2026-09-05 12:12:12,Hoàn trả,245.000,30.000,Product Link,tg,flash,sac-dep,260905-12,b
+ORD00010,100013,2026-09-05 20:59:01,Hoàn thành,215.000,30.000,Product Link,fb,evergreen,cham-soc,260905-20,a
